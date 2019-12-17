@@ -24,11 +24,9 @@ sensors
 ## Install Jetbrains Toolbox
 cd Downloads/Ashpile/ || { echo "Could not reach 'Ashpile' directory. Exiting Script."; exit 1; }
 wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
-
 tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
 mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${HOME}"/.local/bin/
 rm -rf jetbrains-toolbox-1.16.6207.tar.gz
-cd ~/ || { echo "Could not reach 'home' directory. Exiting Script."; exit 1; }
 
 ## Prepare VBox Installation
 wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
@@ -47,14 +45,14 @@ add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/d
 ## Mass Package Installation
 apt -qq update && sleep 3
 apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
-apt install spotify-client chromium-browser nmap deluge htop arc-theme -y
+apt install chromium-browser nmap deluge htop arc-theme -y
 apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra psensor  -y
 apt install virtualbox-6.0 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
 
 ## Install Snap Packages
 snap install spotify
 
-### Hotfixes
+### Hotfixes ###
 
 ## Fix PulseAudio echo
 echo 'load-module module-echo-cancel source_name=logitechsource' >> /etc/pulse/default.pa
@@ -69,6 +67,7 @@ echo 'Section "Device"
 EndSection' >> /etc/X11/xorg.conf.d/20-intel.conf
 
 ### Wrap up Installation
+cd ~/ || { echo "Could not reach 'home' directory. Exiting Script."; exit 1; }
 rm -rf "${HOME}"/Downloads/Ashpile/
 
 ## Final System Check
