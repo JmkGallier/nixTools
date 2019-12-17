@@ -7,41 +7,52 @@
 
 # Bring system up-to-date
 apt -qq update
-apt upgrade -y
-apt dist-upgrade -y
-apt autoremove -y
+apt -qq upgrade -y
+apt -qq full-upgrade -y
+apt -qq autoremove -y
 
 ## Create Sandbox and AppImage Directories and backup Repo list
 mkdir Downloads/Ashpile/
 mkdir "${HOME}"/.local/bin/
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
-cd Downloads/Ashpile/ || exit
 
 ## Install Temp/Package/Compatibility software
-apt install lm-sensors hddtemp snapd wget exfat-fuse exfat-utils -y
+apt install lm-sensors hddtemp snapd wget -y
 sensors-detect
 sensors
 
 ## Install Jetbrains Toolbox
-wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.15.5796.tar.gz
-tar -xzf jetbrains-toolbox-1.15.5796.tar.gz
-rm -rf jetbrains-toolbox-1.15.5796.tar.gz
-mv jetbrains-toolbox-1.15.5796/jetbrains-toolbox "${HOME}"/.local/bin/
+cd Downloads/Ashpile/ || { echo "Could not reach 'Ashpile' directory. Exiting Script."; exit 1; }
+wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
+
+tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
+mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${HOME}"/.local/bin/
+rm -rf jetbrains-toolbox-1.16.6207.tar.gz
+cd ~/ || { echo "Could not reach 'home' directory. Exiting Script."; exit 1; }
 
 ## Prepare VBox Installation
 wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
 add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
 
-## Prepare Spotify Installation
-curl -sS https://download.spotify.com/debian/pubkey.gpg | apt-key add -
-echo "deb http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+## {DEPRECATED}Prepare Spotify Installation{DEPRECATED}
+#curl -sS https://download.spotify.com/debian/pubkey.gpg | apt-key add -
+#echo "deb http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+
+## Prepare BalenaEtcher Installation
+#echo "deb https://deb.etcher.io stable etcher" | tee /etc/apt/sources.list.d/balena-etcher.list
+#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+#apt -q update && sleep 3
+#apt install balena-etcher-electron
 
 ## Mass Package Installation
 apt -qq update && sleep 3
 apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
 apt install spotify-client chromium-browser nmap deluge htop arc-theme -y
-apt install python3-distutils python3-pip libavcodec-extra psensor  -y
+apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra psensor  -y
 apt install virtualbox-6.0 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
+
+## Install Snap Packages
+snap install spotify
 
 ### Hotfixes
 
@@ -62,8 +73,8 @@ rm -rf "${HOME}"/Downloads/Ashpile/
 
 ## Final System Check
 apt -qq update && sleep 3
-apt upgrade -y
-apt full-upgrade -y
-apt autoremove -y
+apt -qq upgrade -y
+apt -qq full-upgrade -y
+apt -qq autoremove -y
 clear
 neofetch
