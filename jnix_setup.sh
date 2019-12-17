@@ -1,27 +1,9 @@
 #!/bin/bash
 
 ## Future Improvements:
-## Docker, PIA(include installer w/script), steam + wine + winetricks + Bethesda Launcer
+## Docker, PIA(include installer w/script), wine + winetricks + arduino + Xsane + Bethesda Launcher + Rockstar Games + Arduino IDE
 ## Antivirus/Rootkit, Linux Security Fixes
 ## Add Bash expects for Y/n and keep maintainer pkg
-##
-## INST362:
-##
-##
-## INST346:
-## Wireshark
-## Packettracer
-##
-##
-## INST377:
-## LAMP Server
-## Docker
-## Git
-## HCIL Research:
-## Arduino IDE
-## SSH
-##
-
 
 # Bring system up-to-date
 apt -qq update
@@ -31,43 +13,35 @@ apt autoremove -y
 
 ## Create Sandbox and AppImage Directories and backup Repo list
 mkdir Downloads/Ashpile/
-mkdir ${HOME}/.local/bin/
+mkdir "${HOME}"/.local/bin/
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
-cd Downloads/Ashpile/
+cd Downloads/Ashpile/ || exit
+
+## Install Temp/Package/Compatibility software
+apt install lm-sensors hddtemp snapd wget exfat-fuse exfat-utils -y
+sensors-detect
+sensors
 
 ## Install Jetbrains Toolbox
 wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.15.5796.tar.gz
 tar -xzf jetbrains-toolbox-1.15.5796.tar.gz
 rm -rf jetbrains-toolbox-1.15.5796.tar.gz
-mv jetbrains-toolbox-1.15.5796/jetbrains-toolbox ${HOME}/.local/bin/
-${HOME}/.local/bin/jetbrains-toolbox
-pkill jetbrains-toolb
+mv jetbrains-toolbox-1.15.5796/jetbrains-toolbox "${HOME}"/.local/bin/
 
 ## Prepare VBox Installation
 wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
-apt -qq update && sleep 3
 add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-apt -qq update && sleep 3
 
 ## Prepare Spotify Installation
-curl -sS https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add -
-apt -qq update && sleep 3
+curl -sS https://download.spotify.com/debian/pubkey.gpg | apt-key add -
 echo "deb http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
-apt -qq update && sleep 3
-
-## Prepare BalenaEtcher Installation
-echo "deb https://deb.etcher.io stable etcher" | tee /etc/apt/sources.list.d/balena-etcher.list
-apt -qq update && sleep 3
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
-apt -qq update && sleep 3
-
-## Prepare Steam Installation
-add-apt-repository multiverse
 
 ## Mass Package Installation
-apt install spotify-client chromium-browser balena-etcher-electron nmap deluge htop gnome-tweak-tool arc-theme -y
-apt install python3-distutils python3-pip exfat-fuse exfat-utils libavcodec-extra gnome-shell-extensions chrome-gnome-shell -y
-apt install virtualbox-6.0 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms steam-installer winetricks -y
+apt -qq update && sleep 3
+apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
+apt install spotify-client chromium-browser nmap deluge htop arc-theme -y
+apt install python3-distutils python3-pip libavcodec-extra psensor  -y
+apt install virtualbox-6.0 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
 
 ### Hotfixes
 
@@ -83,9 +57,13 @@ echo 'Section "Device"
    Option      "TearFree"    "true"
 EndSection' >> /etc/X11/xorg.conf.d/20-intel.conf
 
-## Check for Uninstalled Upgrade
+### Wrap up Installation
+rm -rf "${HOME}"/Downloads/Ashpile/
+
+## Final System Check
 apt -qq update && sleep 3
 apt upgrade -y
-apt dist-upgrade -y
+apt full-upgrade -y
 apt autoremove -y
-shutdown -r now
+clear
+neofetch
