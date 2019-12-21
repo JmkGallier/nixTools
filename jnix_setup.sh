@@ -32,12 +32,6 @@ wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
 apt-key add oracle_vbox_2016.asc
 add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
 
-## Prepare BalenaEtcher Installation
-#echo "deb https://deb.etcher.io stable etcher" | tee /etc/apt/sources.list.d/balena-etcher.list
-#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
-#apt -q update && sleep 3
-#apt install balena-etcher-electron
-
 ## Mass Package Installation
 apt -qq update && sleep 3
 apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
@@ -76,3 +70,10 @@ apt -qq full-upgrade -y
 apt -qq autoremove -y
 clear
 neofetch
+
+### Experimental implementations
+## Prepare BalenaEtcher Installation
+#echo "deb https://deb.etcher.io stable etcher" | tee /etc/apt/sources.list.d/balena-etcher.list
+#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+#apt -q update && sleep 3
+#apt install balena-etcher-electron
