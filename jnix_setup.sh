@@ -5,14 +5,13 @@
 ## Antivirus/Rootkit, Linux Security Fixes
 ## Add Bash expects for Y/n and keep maintainer pkg
 
-# Bring system up-to-date
+## Bring system up-to-date
 apt -qq update
 apt -qq upgrade -y
-apt -qq full-upgrade -y
 apt -qq autoremove -y
 
 ## Create Sandbox and AppImage Directories and backup Repo list
-mkdir Downloads/Ashpile/
+mkdir Downloads/Sandbox/
 mkdir "${HOME}"/.local/bin/
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
 
@@ -22,19 +21,16 @@ sensors-detect
 sensors
 
 ## Install Jetbrains Toolbox
-cd Downloads/Ashpile/ || { echo "Could not reach 'Ashpile' directory. Exiting Script."; exit 1; }
+cd Downloads/Sandbox/ || { echo "Could not reach 'Sandbox' directory. Exiting Script."; exit 1; }
 wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
 tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
 mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${HOME}"/.local/bin/
 rm -rf jetbrains-toolbox-1.16.6207.tar.gz
 
 ## Prepare VBox Installation
-wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
+wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
+apt-key add oracle_vbox_2016.asc
 add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-
-## {DEPRECATED}Prepare Spotify Installation{DEPRECATED}
-#curl -sS https://download.spotify.com/debian/pubkey.gpg | apt-key add -
-#echo "deb http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
 
 ## Prepare BalenaEtcher Installation
 #echo "deb https://deb.etcher.io stable etcher" | tee /etc/apt/sources.list.d/balena-etcher.list
@@ -47,10 +43,11 @@ apt -qq update && sleep 3
 apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
 apt install chromium-browser nmap deluge htop arc-theme -y
 apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra psensor  -y
-apt install virtualbox-6.0 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
+apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
 
 ## Install Snap Packages
 snap install spotify
+snap install atom --classic
 
 ### Hotfixes ###
 
@@ -66,9 +63,11 @@ echo 'Section "Device"
    Option      "TearFree"    "true"
 EndSection' >> /etc/X11/xorg.conf.d/20-intel.conf
 
-### Wrap up Installation
+### Wrap up Installation ###
+
+## Delete Sandbox directory
 cd ~/ || { echo "Could not reach 'home' directory. Exiting Script."; exit 1; }
-rm -rf "${HOME}"/Downloads/Ashpile/
+rm -rf "${HOME}"/Downloads/Sandbox/
 
 ## Final System Check
 apt -qq update && sleep 3
