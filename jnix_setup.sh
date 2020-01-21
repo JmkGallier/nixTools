@@ -16,9 +16,9 @@ mkdir "${HOME}"/.local/bin/
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
 
 ## Install Temp/Package/Compatibility software
-apt install lm-sensors hddtemp snapd wget -y
-sensors-detect
-sensors
+#apt install lm-sensors hddtemp snapd wget -y
+#sensors-detect
+#sensors
 
 ## Install Jetbrains Toolbox
 cd Downloads/Sandbox/ || { echo "Could not reach 'Sandbox' directory. Exiting Script."; exit 1; }
@@ -36,8 +36,9 @@ add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/d
 apt -qq update && sleep 3
 apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
 apt install chromium-browser nmap deluge htop arc-theme -y
-apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra psensor  -y
+apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
 apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
+#apt install psensor
 
 ## Install Snap Packages
 snap install spotify
