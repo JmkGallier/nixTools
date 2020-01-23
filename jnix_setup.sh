@@ -34,11 +34,12 @@ add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/d
 
 ## Mass Package Installation
 apt -qq update && sleep 3
-apt install steam-installer neofetch gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
+apt install steam-installer neofetch -y
 apt install chromium-browser nmap deluge htop arc-theme -y
 apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
 apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
 #apt install psensor
+#apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
 
 ## Install Snap Packages
 snap install spotify
