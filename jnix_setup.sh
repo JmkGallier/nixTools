@@ -4,6 +4,7 @@
 ## Docker, PIA(include installer w/script), wine + winetricks + arduino + Xsane + Bethesda Launcher + Rockstar Games + Arduino IDE
 ## Antivirus/Rootkit, Linux Security Fixes
 ## Add Bash expects for Y/n and keep maintainer pkg
+## Add bash variables for github accounts creation
 
 ## Bring system up-to-date
 apt -qq update
