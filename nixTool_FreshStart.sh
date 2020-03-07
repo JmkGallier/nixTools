@@ -37,14 +37,16 @@ install_JBToolbox () {
 
 # Apply Audio sink to fix Microphone-Speaker Echo
 fix_PulseAudioEcho () {
+  # Implement nessecity check before running
   echo 'load-module module-echo-cancel source_name=logitechsource' >> /etc/pulse/default.pa
   echo 'set-default-source logitechsource' >> /etc/pulse/default.pa
 }
 
 # Apply fix for screen tearing on systems with intel-gpu
-# This requires a check for dir&file in question
-# This requires a check textstring echoed into file
 fix_IntelScreenTear () {
+  # Implement nessecity check before running
+  # This requires a check for dir&file in question
+  # This requires a check textstring echoed into file
   mkdir -p /etc/X11/xorg.conf.d/
   echo 'Section "Device"
      Identifier  "Intel Graphics"
@@ -67,18 +69,15 @@ apt install wget snapd steam-installer neofetch -y
 apt install chromium-browser nmap deluge htop arc-theme -y
 apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
 apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
-
-#apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
-
-
+apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
 
 ## Install Snap Packages
 snap install spotify
 snap install atom --classic
 
 # Hotfixes
-fix_PulseAudioEcho # Requires check
-fix_IntelScreenTear # Requires conditional to check for intel system
+fix_PulseAudioEcho
+fix_IntelScreenTear
 
 # Wrap up Installation
 
@@ -89,24 +88,3 @@ rm -rf "${HOME}"/Downloads/Sandbox/
 ## Final System Check
 system_Refresh
 clear && neofetch
-
-## Future Improvements:
-## Docker, PIA(include installer w/script), wine + winetricks + arduino + Xsane + Bethesda Launcher + Rockstar Games + Arduino IDE
-## Antivirus/Rootkit, Linux Security Fixes
-## Add Bash expects for Y/n and keep maintainer pkg
-
-### Experimental implementations
-
-## - Prepare BalenaEtcher Installation -
-#echo "deb https://deb.etcher.io stable etcher" | tee /etc/apt/sources.list.d/balena-etcher.list
-#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
-#apt -qq update
-#apt install balena-etcher-electron
-# - -
-
-## - Install Temp/Package/Compatibility software -
-#apt install lm-sensors hddtemp -y
-#sensors-detect
-#sensors
-#apt install psensor
-# - -
