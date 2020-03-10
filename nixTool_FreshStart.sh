@@ -55,25 +55,54 @@ fix_IntelScreenTear () {
   EndSection' >> /etc/X11/xorg.conf.d/20-intel.conf
 }
 
+# Set Git VCS global username and email
+config_GitIdent () {
+  local user_confirm=0
+  local gitUser
+  local gitEmail
+
+  while [ "${user_confirm}" == 0 ]; do
+
+    printf "\nPlease enter a username and email address to document your Git commits.\n"
+    read -rp "Username: " gitUser && read -rp "Email Address: " gitEmail
+    printf "\n"
+    git config --global user.name "${gitUser}"
+    git config --global user.email "${gitEmail}"
+    git config --list | grep user
+
+    echo "Is this the correct Username and Email?"
+    select yn in "Yes" "No"; do
+        case $yn in
+            Yes ) user_confirm=1; break;;
+            No ) break;;
+        esac
+    done
+
+  done
+}
+
 #### SCRIPT START ####
 system_Refresh
+
+# Preperation Functions
 prep_ScriptSetupDirectory # Check permissions on created directories
+prep_VBox # Update links/Stop relying on links
 
 # Requested Package Section
 install_JBToolbox # Update links/Stop relying on links
-prep_VBox # Update links/Stop relying on links
 
 # Mass Package Installation
 apt -qq update && sleep 3
-apt install wget snapd steam-installer neofetch -y
+apt install wget steam-installer neofetch -y
 apt install chromium-browser nmap deluge htop arc-theme -y
 apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
 apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
 apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
 
 ## Install Snap Packages
-snap install spotify
-snap install atom --classic
+#apt install snapd
+#snap install spotify
+#snap install atom --classic
 
 # Hotfixes
 fix_PulseAudioEcho
