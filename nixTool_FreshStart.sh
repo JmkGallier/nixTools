@@ -1,13 +1,16 @@
 #!/bin/bash
-set -e
 
 #### SCRIPT PARAMETERS
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
 USER_HOME=$HOME
 
+if [ "${CURRENT_SCRIPT_STATE}" == dev ]; then
+  set -e
+fi
+
 #### FUNCTIONS DECLARED
-#
+
 # Bring system up-to-date
 system_Refresh() {
   apt -qq update
@@ -26,8 +29,9 @@ prep_CreateScriptDirs() {
   }
 }
 
-prep_ClearTempScriptDirs() {
-    cd ~/ || {
+# Remove temp directory created in prep_CreateScripDirs
+prep_ClearScriptDirs() {
+  cd ~/ || {
     echo "Could not reach 'home' directory. Exiting Script."
     exit 1
   }
@@ -71,11 +75,10 @@ fix_IntelScreenTear() {
 
 # Set Git VCS global username and email
 config_GitIdent() {
-  local gitUser
-  local gitEmail
-  local user_confirm=0
+  local gitUser gitEmail
+  local CONFIRM_STATE=0
 
-  while [ "${user_confirm}" == 0 ]; do
+  while [ "${CONFIRM_STATE}" == 0 ]; do
 
     printf "\nPlease enter a username and email address to document your Git commits.\n"
     read -rp "Username: " gitUser && read -rp "Email Address: " gitEmail
@@ -87,7 +90,10 @@ config_GitIdent() {
     echo "Is this the correct Username and Email?"
     select yn in "Yes" "No"; do
       case $yn in
-      Yes) user_confirm=1; break;;
+      Yes)
+        CONFIRM_STATE=1
+        break
+        ;;
       No) break ;;
       esac
     done
@@ -101,21 +107,20 @@ config_FreshSystem() {
 
   # Preperation Functions
   prep_CreateScriptDirs # Check permissions on created directories
-  prep_VBox                 # Update links/Stop relying on links
+  prep_VBox             # Update links/Stop relying on links
 
   # Requested Package Section
   install_JBToolbox # Update links/Stop relying on links
 
   # Mass Package Installation
   apt -qq update && sleep 3
-  apt install wget steam-installer neofetch -y
-  apt install chromium-browser nmap deluge htop arc-theme -y
-  apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
+  apt install wget snapd steam-installer neofetch exfat-fuse exfat-utils -y
+  apt install nmap deluge htop arc-theme -y
+  apt install python3-distutils python3-pip libavcodec-extra -y
   apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
-  apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
+  apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
 
   ## Install Snap Packages
-  #apt install snapd
   #snap install spotify
   #snap install atom --classic
 
@@ -126,8 +131,7 @@ config_FreshSystem() {
   # Wrap up Installation
 
   ## Delete Sandbox directory
-  prep_ClearTempScriptDirs
-
+  prep_ClearScriptDirs
 
   ## Required User Interaction
   #
@@ -138,21 +142,28 @@ config_FreshSystem() {
   clear && neofetch
 }
 
-if [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; then
-  while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
+# UGLY: Experiment with test/switch/case to streamline this
+script_Main() {
+  if [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; then
+    while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
 
-    while [ "${CURRENT_SCRIPT_STATE}" == dev ]; do
-      echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
-      CURRENT_SCRIPT_STATE=none
+      while [ "${CURRENT_SCRIPT_STATE}" == dev ]; do
+        echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
+        config_GitIdent
+        CURRENT_SCRIPT_STATE=none
+        echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
+      done
+
+      while [ "${CURRENT_SCRIPT_STATE}" == prod ]; do
+        config_FreshSystem
+        CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
+      done
+
     done
+  else
+    echo "Invalid SCRIPT_STATE '${CURRENT_SCRIPT_STATE}'"
+    echo " Exiting Script"
+  fi
+}
 
-    while [ "${CURRENT_SCRIPT_STATE}" == prod ]; do
-      config_FreshSystem
-      CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
-    done
-
-  done
-else
-  echo "Invalid SCRIPT_STATE '${CURRENT_SCRIPT_STATE}'"
-  echo " Exiting Script"
-fi
+script_Main
