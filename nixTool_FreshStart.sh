@@ -1,34 +1,48 @@
 #!/bin/bash
+set -e
 
-#### ENVIRONMENT PARAMETERS
+#### SCRIPT PARAMETERS
+DEFAULT_SCRIPT_STATE="none"
+CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
 USER_HOME=$HOME
 
 #### FUNCTIONS DECLARED
-
+#
 # Bring system up-to-date
-system_Refresh () {
+system_Refresh() {
   apt -qq update
   apt -qq upgrade -y
   apt -qq autoremove -y
 }
 
 # Prepare directories to be used by script
-prep_ScriptSetupDirectory () {
-  mkdir "${USER_HOME}"/Downloads/Sandbox/
-  mkdir "${USER_HOME}"/.local/bin/
+prep_CreateScriptDirs() {
+  mkdir -p "${USER_HOME}"/Downloads/Sandbox/
+  mkdir -p "${USER_HOME}"/.local/bin/
   cp /etc/apt/sources.list /etc/apt/sources.list.bak
+  cd "${USER_HOME}"/Downloads/Sandbox/ || {
+    echo "Could not reach 'Sandbox' directory. Exiting Script."
+    exit 1
+  }
+}
+
+prep_ClearTempScriptDirs() {
+    cd ~/ || {
+    echo "Could not reach 'home' directory. Exiting Script."
+    exit 1
+  }
+  rm -rf "${USER_HOME}"/Downloads/Sandbox/
 }
 
 # Prepare Virtual Box Install
-prep_VBox () {
+prep_VBox() {
   wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
   apt-key add oracle_vbox_2016.asc
   add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
 }
 
 # Install JetBrains Toolbox App
-install_JBToolbox () {
-  cd "${USER_HOME}"/Downloads/Sandbox/ || { echo "Could not reach 'Sandbox' directory. Exiting Script."; exit 1; }
+install_JBToolbox() {
   wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
   tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
   mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${USER_HOME}"/.local/bin/
@@ -36,14 +50,14 @@ install_JBToolbox () {
 }
 
 # Apply Audio sink to fix Microphone-Speaker Echo
-fix_PulseAudioEcho () {
+fix_PulseAudioEcho() {
   # Implement nessecity check before running
-  echo 'load-module module-echo-cancel source_name=logitechsource' >> /etc/pulse/default.pa
-  echo 'set-default-source logitechsource' >> /etc/pulse/default.pa
+  echo 'load-module module-echo-cancel source_name=logitechsource' >>/etc/pulse/default.pa
+  echo 'set-default-source logitechsource' >>/etc/pulse/default.pa
 }
 
 # Apply fix for screen tearing on systems with intel-gpu
-fix_IntelScreenTear () {
+fix_IntelScreenTear() {
   # Implement nessecity check before running
   # This requires a check for dir&file in question
   # This requires a check textstring echoed into file
@@ -52,14 +66,14 @@ fix_IntelScreenTear () {
      Identifier  "Intel Graphics"
      Driver      "intel"
      Option      "TearFree"    "true"
-  EndSection' >> /etc/X11/xorg.conf.d/20-intel.conf
+  EndSection' >>/etc/X11/xorg.conf.d/20-intel.conf
 }
 
 # Set Git VCS global username and email
-config_GitIdent () {
-  local user_confirm=0
+config_GitIdent() {
   local gitUser
   local gitEmail
+  local user_confirm=0
 
   while [ "${user_confirm}" == 0 ]; do
 
@@ -72,48 +86,73 @@ config_GitIdent () {
 
     echo "Is this the correct Username and Email?"
     select yn in "Yes" "No"; do
-        case $yn in
-            Yes ) user_confirm=1; break;;
-            No ) break;;
-        esac
+      case $yn in
+      Yes) user_confirm=1; break;;
+      No) break ;;
+      esac
     done
 
   done
 }
 
-#### SCRIPT START ####
-system_Refresh
+config_FreshSystem() {
+  #### SCRIPT START ####
+  system_Refresh
 
-# Preperation Functions
-prep_ScriptSetupDirectory # Check permissions on created directories
-prep_VBox # Update links/Stop relying on links
+  # Preperation Functions
+  prep_CreateScriptDirs # Check permissions on created directories
+  prep_VBox                 # Update links/Stop relying on links
 
-# Requested Package Section
-install_JBToolbox # Update links/Stop relying on links
+  # Requested Package Section
+  install_JBToolbox # Update links/Stop relying on links
 
-# Mass Package Installation
-apt -qq update && sleep 3
-apt install wget steam-installer neofetch -y
-apt install chromium-browser nmap deluge htop arc-theme -y
-apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
-apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
-apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
+  # Mass Package Installation
+  apt -qq update && sleep 3
+  apt install wget steam-installer neofetch -y
+  apt install chromium-browser nmap deluge htop arc-theme -y
+  apt install exfat-fuse exfat-utils python3-distutils python3-pip libavcodec-extra -y
+  apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
+  apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell
 
-## Install Snap Packages
-#apt install snapd
-#snap install spotify
-#snap install atom --classic
+  ## Install Snap Packages
+  #apt install snapd
+  #snap install spotify
+  #snap install atom --classic
 
-# Hotfixes
-fix_PulseAudioEcho
-fix_IntelScreenTear
+  # Hotfixes
+  fix_PulseAudioEcho
+  fix_IntelScreenTear
 
-# Wrap up Installation
+  # Wrap up Installation
 
-## Delete Sandbox directory
-cd ~/ || { echo "Could not reach 'home' directory. Exiting Script."; exit 1; }
-rm -rf "${HOME}"/Downloads/Sandbox/
+  ## Delete Sandbox directory
+  prep_ClearTempScriptDirs
 
-## Final System Check
-system_Refresh
-clear && neofetch
+
+  ## Required User Interaction
+  #
+  #
+
+  ## Final System Check
+  system_Refresh
+  clear && neofetch
+}
+
+if [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; then
+  while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
+
+    while [ "${CURRENT_SCRIPT_STATE}" == dev ]; do
+      echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
+      CURRENT_SCRIPT_STATE=none
+    done
+
+    while [ "${CURRENT_SCRIPT_STATE}" == prod ]; do
+      config_FreshSystem
+      CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
+    done
+
+  done
+else
+  echo "Invalid SCRIPT_STATE '${CURRENT_SCRIPT_STATE}'"
+  echo " Exiting Script"
+fi
