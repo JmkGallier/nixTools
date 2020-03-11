@@ -38,7 +38,3 @@ fi
 #apt install psensor
 # - -
 
-
-
-
-echo "${CURRENT_SCRIPT_STATE}"

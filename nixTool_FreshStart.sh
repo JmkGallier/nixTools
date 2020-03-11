@@ -161,7 +161,7 @@ script_Main() {
 
     done
   else
-    echo "Invalid SCRIPT_STATE '${CURRENT_SCRIPT_STATE}'"
+    echo "Invalid SCRIPT_STATE =>'${CURRENT_SCRIPT_STATE}'"
     echo " Exiting Script"
   fi
 }
