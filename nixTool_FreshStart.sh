@@ -86,8 +86,9 @@ config_GitIdent() {
     git config --global user.name "${gitUser}"
     git config --global user.email "${gitEmail}"
     git config --list | grep user
+    printf "\n"
 
-    echo "Is this the correct Username and Email?"
+    echo "Are the details above correct?"
     select yn in "Yes" "No"; do
       case $yn in
       Yes)
@@ -134,8 +135,7 @@ config_FreshSystem() {
   prep_ClearScriptDirs
 
   ## Required User Interaction
-  #
-  #
+  config_GitIdent
 
   ## Final System Check
   system_Refresh

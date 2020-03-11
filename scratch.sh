@@ -8,12 +8,8 @@
 #USER_CURRENT_DE=#env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2-
 #LOCAL_KERN_VERSION=#uname -v
 
-if [ "${CURRENT_SCRIPT_STATE}" == dev ]; then
-  set -e
-fi
-
-# Install Targets !#
-# User Variables !#
+# Install Targets/List !#
+# User Input/Variables !#
 
 #### Future Improvements:
 ## Docker, PIA(include installer w/script), wine + winetricks +
