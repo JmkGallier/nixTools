@@ -11,26 +11,26 @@ The purpose of this tool is to automate package installation and system configur
 
 ##### To Do:
 ###### Milestones/"Features"
-*[ ] Apply switch/case handle for 'Script State' 
-*[ ] Implement 'Dialog' CLI Interface & user selection of packagesets
-*[ ] Options
-*[ ]
-*[ ]
+* [ ] Apply switch/case handle for 'Script State' 
+* [ ] Implement 'Dialog' CLI Interface & user selection of packagesets
+* [ ] Options
+* [ ]
+* [ ]
 
 ###### Security
-*[ ] Link handling on JBToolBox and prep_VBox
-*[ ] Isolate user escalation events
-*[ ] 
-*[ ]
-*[ ]
+* [ ] Link handling on JBToolBox and prep_VBox
+* [ ] Isolate user escalation events
+* [ ] 
+* [ ]
+* [ ]
 
 ###### Due Diligence
-*[ ] Check for fix necessity (pre-applied or not required)
-*[ ] Explicit file/dir permission
-*[ ] Implement script-called exits
-*[ ]
+* [ ] Check for fix necessity (pre-applied or not required)
+* [ ] Explicit file/dir permission
+* [ ] Implement script-called exits
+* [ ]
 
 ###### Weekly Fix Update
-*[ ] Intel Screen tearing fix on 19.10 systems
-*[ ] Echo on ubuntu (18.04, 19.10)
-*[ ] 
+* [ ] Intel Screen tearing fix on 19.10 systems
+* [ ] Echo on ubuntu (18.04, 19.10)
+* [ ] 
