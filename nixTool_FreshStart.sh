@@ -19,6 +19,7 @@ system_Refresh() {
 }
 
 # Prepare directories to be used by script
+# Check permissions on created directories
 prep_CreateScriptDirs() {
   mkdir -p "${USER_HOME}"/Downloads/Sandbox/
   mkdir -p "${USER_HOME}"/.local/bin/
@@ -39,6 +40,7 @@ prep_ClearScriptDirs() {
 }
 
 # Prepare Virtual Box Install
+# Update links/Stop relying on links
 prep_VBox() {
   wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
   apt-key add oracle_vbox_2016.asc
@@ -46,6 +48,7 @@ prep_VBox() {
 }
 
 # Install JetBrains Toolbox App
+# Update links/Stop relying on links
 install_JBToolbox() {
   wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
   tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
@@ -54,17 +57,17 @@ install_JBToolbox() {
 }
 
 # Apply Audio sink to fix Microphone-Speaker Echo
+# Implement necessity check before running
 fix_PulseAudioEcho() {
-  # Implement nessecity check before running
   echo 'load-module module-echo-cancel source_name=logitechsource' >>/etc/pulse/default.pa
   echo 'set-default-source logitechsource' >>/etc/pulse/default.pa
 }
 
 # Apply fix for screen tearing on systems with intel-gpu
+# Implement nessecity check before running
+# This requires a check for dir&file in question
+# This requires a check textstring echoed into file
 fix_IntelScreenTear() {
-  # Implement nessecity check before running
-  # This requires a check for dir&file in question
-  # This requires a check textstring echoed into file
   mkdir -p /etc/X11/xorg.conf.d/
   echo 'Section "Device"
      Identifier  "Intel Graphics"
@@ -102,18 +105,18 @@ config_GitIdent() {
   done
 }
 
+#### SCRIPT START ####
 config_FreshSystem() {
-  #### SCRIPT START ####
+  #System Handlers
   system_Refresh
+  prep_CreateScriptDirs
 
-  # Preperation Functions
-  prep_CreateScriptDirs # Check permissions on created directories
-  prep_VBox             # Update links/Stop relying on links
-
-  # Requested Package Section
-  install_JBToolbox # Update links/Stop relying on links
+  # Requested Package Section (Prep-Req)
+  install_JBToolbox
+  prep_VBox
 
   # Mass Package Installation
+  # use Dialog to handle package selection
   apt -qq update && sleep 3
   apt install wget snapd steam-installer neofetch exfat-fuse exfat-utils -y
   apt install nmap deluge htop arc-theme -y
@@ -134,7 +137,7 @@ config_FreshSystem() {
   ## Delete Sandbox directory
   prep_ClearScriptDirs
 
-  ## Required User Interaction
+  ## Final User Interaction
   config_GitIdent
 
   ## Final System Check
@@ -142,7 +145,6 @@ config_FreshSystem() {
   clear && neofetch
 }
 
-# UGLY: Experiment with test/switch/case to streamline this
 script_Main() {
   if [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; then
     while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
