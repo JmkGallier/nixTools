@@ -4,6 +4,7 @@
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
 USER_HOME=$HOME
+IS_VIRTUAL_ENV=false
 
 if [ "${CURRENT_SCRIPT_STATE}" == dev ]; then
   set -e
@@ -152,7 +153,7 @@ script_Main() {
       while [ "${CURRENT_SCRIPT_STATE}" == dev ]; do
         echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
         config_GitIdent
-        CURRENT_SCRIPT_STATE=none
+        CURRENT_SCRIPT_STATE="none"
         echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
       done
 
