@@ -7,9 +7,9 @@ scripts which automate much of the repetitive tasks experienced system-to-system
 #### Fresh Start
 The purpose of this tool is to automate package installation and system configuration.
 
-##### How to use
+#### How to use
 
-##### To Do:
+#### To Do:
 ###### Milestones/"Features"
 * [ ] Apply switch/case handle for 'Script State' 
 * [ ] Implement 'Dialog' CLI Interface & user selection of packagesets
