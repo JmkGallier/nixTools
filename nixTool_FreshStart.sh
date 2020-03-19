@@ -6,11 +6,11 @@ set -o pipefail
 declare -A SCRIPT_STATE_OPTIONS
 declare -A IS_VIRTUAL_ENV_OPTIONS
 SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1)
-IS_VIRTUAL_ENV_OPTIONS=(["true"]=1 ["false"]=1)
+IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
 USER_HOME=$HOME
-IS_VIRTUAL_ENV="false"
+IS_VIRTUAL_ENV="host"
 
 #### Option Input
 while [ -n "${1-}" ]; do
@@ -33,19 +33,6 @@ while [ -n "${1-}" ]; do
   esac
   shift
 done
-
-#### Option Checks USE CASE
-#if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then :
-#else
-#  echo "${CURRENT_SCRIPT_STATE} is not a valid option"
-#  CURRENT_SCRIPT_STATE="none"
-#fi
-#
-#if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
-#else
-#  echo "${IS_VIRTUAL_ENV} is not a valid option"
-#  CURRENT_SCRIPT_STATE="none"
-#fi
 
 #### FUNCTIONS DECLARED
 
@@ -120,7 +107,6 @@ config_GitIdent() {
   local CONFIRM_STATE=0
 
   while [ "${CONFIRM_STATE}" == 0 ]; do
-
     printf "\nPlease enter a username and email address to document your Git commits.\n"
     read -rp "Username: " gitUser && read -rp "Email Address: " gitEmail
     printf "\n"
@@ -155,6 +141,7 @@ config_FreshSystem() {
 
   # Mass Package Installation
   # use Dialog to handle package selection
+  # Use IS_VIRTUAL_ENV to exclude/include virtualbox packages
   apt -qq update && sleep 3
   apt install wget snapd steam-installer neofetch exfat-fuse exfat-utils -y
   apt install nmap deluge htop arc-theme -y
@@ -166,17 +153,12 @@ config_FreshSystem() {
   #snap install spotify
   #snap install atom --classic
 
-  # Hotfixes
+  ## Hotfixes
   fix_PulseAudioEcho
   fix_IntelScreenTear
 
-  # Wrap up Installation
-
   ## Delete Sandbox directory
   prep_ClearScriptDirs
-
-  ## Final User Interaction
-  config_GitIdent
 
   ## Final System Check
   system_Refresh
@@ -184,26 +166,28 @@ config_FreshSystem() {
 }
 
 script_Main() {
-  if [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; then
-    while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
-
-      while [ "${CURRENT_SCRIPT_STATE}" == dev ]; do
-        echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
+  while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
+    case $CURRENT_SCRIPT_STATE in
+      test)
+        echo "Script State: ${CURRENT_SCRIPT_STATE}"
+        CURRENT_SCRIPT_STATE="none"
+        ;;
+      dev)
+        echo "Script State: ${CURRENT_SCRIPT_STATE}"
+        CURRENT_SCRIPT_STATE="none"
+        ;;
+      prod)
+        echo "Script State: ${CURRENT_SCRIPT_STATE}"
+        config_FreshSystem
         config_GitIdent
         CURRENT_SCRIPT_STATE="none"
-        echo "CURRENT_SCRIPT_STATE = '${CURRENT_SCRIPT_STATE}'"
-      done
-
-      while [ "${CURRENT_SCRIPT_STATE}" == prod ]; do
-        config_FreshSystem
-        CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
-      done
-
-    done
-  else
-    echo "Invalid SCRIPT_STATE =>'${CURRENT_SCRIPT_STATE}'"
-    echo " Exiting Script"
-  fi
+        ;;
+      *)
+        echo "Invalid Script State: ${CURRENT_SCRIPT_STATE}"
+        CURRENT_SCRIPT_STATE="none"
+        ;;
+    esac
+  done
 }
 
 script_Main
