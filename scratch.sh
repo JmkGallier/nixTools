@@ -16,29 +16,6 @@ CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
 #LOCAL_KERN_VERSION=#uname -v
 
 
-#### Option Input
-while [ -n "${1-}" ]; do
-  case "$1" in
-  -s) CURRENT_SCRIPT_STATE="$2"
-    if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then :
-    else
-      echo "${CURRENT_SCRIPT_STATE} is not a valid option"
-      CURRENT_SCRIPT_STATE="none"
-      fi
-      ;;
-  -v) IS_VIRTUAL_ENV="$2"
-    if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
-    else
-      echo "${IS_VIRTUAL_ENV} is not a valid option"
-      CURRENT_SCRIPT_STATE="none"
-    fi
-    ;;
-  --) shift ; break ;;
-  esac
-  shift
-done
-
-
 
 # Install Targets/List !#
 # User Input/Variables !#
