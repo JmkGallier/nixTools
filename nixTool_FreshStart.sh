@@ -1,14 +1,51 @@
 #!/bin/bash
+set -e
+set -o pipefail
 
 #### SCRIPT PARAMETERS
+declare -A SCRIPT_STATE_OPTIONS
+declare -A IS_VIRTUAL_ENV_OPTIONS
+SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1)
+IS_VIRTUAL_ENV_OPTIONS=(["true"]=1 ["false"]=1)
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
 USER_HOME=$HOME
-IS_VIRTUAL_ENV=false
+IS_VIRTUAL_ENV="false"
 
-if [ "${CURRENT_SCRIPT_STATE}" == dev ]; then
-  set -e
-fi
+#### Option Input
+while [ -n "${1-}" ]; do
+  case "$1" in
+  -s) CURRENT_SCRIPT_STATE="$2"
+    if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then :
+    else
+      echo "${CURRENT_SCRIPT_STATE} is not a valid option"
+      CURRENT_SCRIPT_STATE="none"
+      fi
+      ;;
+  -v) IS_VIRTUAL_ENV="$2"
+    if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
+    else
+      echo "${IS_VIRTUAL_ENV} is not a valid option"
+      CURRENT_SCRIPT_STATE="none"
+    fi
+    ;;
+  --) shift ; break ;;
+  esac
+  shift
+done
+
+#### Option Checks USE CASE
+#if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then :
+#else
+#  echo "${CURRENT_SCRIPT_STATE} is not a valid option"
+#  CURRENT_SCRIPT_STATE="none"
+#fi
+#
+#if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
+#else
+#  echo "${IS_VIRTUAL_ENV} is not a valid option"
+#  CURRENT_SCRIPT_STATE="none"
+#fi
 
 #### FUNCTIONS DECLARED
 

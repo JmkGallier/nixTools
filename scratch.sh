@@ -1,16 +1,15 @@
 #!/bin/bash
 set -e
-set -u
 set -o pipefail
 
 #### SCRIPT PARAMETERS
-
 declare -A SCRIPT_STATE_OPTIONS
-SCRIPT_STATE_OPTIONS=([none]=0 [test]=1 [dev]=1 [prod]=1)
+declare -A IS_VIRTUAL_ENV_OPTIONS
+SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1)
+IS_VIRTUAL_ENV_OPTIONS=(["true"]=1 ["false"]=1)
 DEFAULT_SCRIPT_STATE="none"
+IS_VIRTUAL_ENV="false"
 CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
-IS_VIRTUAL_ENV=false
-
 #USER_HOME=$HOME
 #USER_CURRENT_DISTRO=#env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2-
 #USER_CURRENT_DE=#env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2-
@@ -19,24 +18,27 @@ IS_VIRTUAL_ENV=false
 
 #### Option Input
 while [ -n "${1-}" ]; do
-
   case "$1" in
-  -s) CURRENT_SCRIPT_STATE="$2" ;; # Options are dev/prod/none
-  -v) IS_VIRTUAL_ENV="$2" ;; # Options are true/false
+  -s) CURRENT_SCRIPT_STATE="$2"
+    if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then :
+    else
+      echo "${CURRENT_SCRIPT_STATE} is not a valid option"
+      CURRENT_SCRIPT_STATE="none"
+      fi
+      ;;
+  -v) IS_VIRTUAL_ENV="$2"
+    if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
+    else
+      echo "${IS_VIRTUAL_ENV} is not a valid option"
+      CURRENT_SCRIPT_STATE="none"
+    fi
+    ;;
   --) shift ; break ;;
-
   esac
   shift
-
 done
 
-#### Option Checks USE CASE
-if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then
-  echo "${CURRENT_SCRIPT_STATE} in array"
-else
-  echo
-    echo "${CURRENT_SCRIPT_STATE} not in ${SCRIPT_STATE_OPTIONS[*]}"
-fi
+
 
 # Install Targets/List !#
 # User Input/Variables !#
