@@ -20,7 +20,7 @@ while [ -n "${1-}" ]; do
     else
       echo "${CURRENT_SCRIPT_STATE} is not a valid option"
       CURRENT_SCRIPT_STATE="none"
-      fi
+    fi
       ;;
   -v) IS_VIRTUAL_ENV="$2"
     if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
