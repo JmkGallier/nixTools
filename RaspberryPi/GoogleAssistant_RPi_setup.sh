@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CLIENT_SECRET=${5}
+CLIENT_SECRET=${1}
 
 install_GA_DEP() {
   apt -qq update
@@ -17,7 +17,15 @@ install_GA() {
 }
 
 resolve_SPEAKER() {
-  pass
+  local CONFIRM_STATE=0
+
+  while [ "${CONFIRM_STATE}" == 0 ]; do
+    for i in "${!SPEAKER_address[@]}" ; do
+      SPEAKER_CARD_DEVICE="${SPEAKER_address[i]}"
+
+    done
+
+  done
 }
 
 config_Audio_IO() {
@@ -46,10 +54,10 @@ config_Audio_IO() {
     SPEAKER_CARD_DEVICE="0,0"
     ;;
   1)
-    SPEAKER_CARD_DEVICE="${SPEAKER_address[1]}"
+    SPEAKER_CARD_DEVICE="${SPEAKER_address[0]}"
     ;;
   *)
-    echo "More than 1"
+    resolve_SPEAKER "${SPEAKER_address[0]}"
   ;;
   esac
 }
