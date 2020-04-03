@@ -1,9 +1,5 @@
 #!/bin/bash
 
-MIC_CARD=${1}
-MIC_DEVICE=${2}
-SOUND_CARD=${3}
-SOUND_DEVICE=${4}
 CLIENT_SECRET=${5}
 
 install_GA_DEP() {
@@ -20,23 +16,19 @@ install_GA() {
   google-oauthlib-tool --scope https://www.googleapis.com/auth/assistant-sdk-prototype --save --headless --client-secrets "${CLIENT_SECRET}"
 }
 
+resolve_SPEAKER() {
+  pass
+}
+
 config_Audio_IO() {
-  local SPEAKER_card_array=()
-  local SPEAKER_device_array=()
-  local SPEAKER_address=()
-
-  local MIC_card_array=()
-  local MIC_device_array=()
-  local MIC_address=()
-
+  local SPEAKER_card_array=() SPEAKER_device_array=() SPEAKER_address=()
+  local MIC_card_array=() MIC_device_array=() MIC_address=()
+  local MIC_CARD_DEVICE SPEAKER_CARD_DEVICE
 
   mapfile -t SPEAKER_card_array < <(aplay -l | grep -oP '(?<=card )[0-9]+')
   mapfile -t SPEAKER_device_array < <(aplay -l | grep -oP '(?<=device )[0-9]+')
-
   mapfile -t MIC_card_array < <(arecord -l | grep -oP '(?<=card )[0-9]+')
   mapfile -t MIC_device_array < <(arecord -l | grep -oP '(?<=device )[0-9]+')
-
-
 
   for i in "${!SPEAKER_card_array[@]}"; do
     SPEAKER_address+=( "${SPEAKER_card_array[i]},${SPEAKER_device_array[i]}" )
@@ -49,9 +41,17 @@ config_Audio_IO() {
   echo "${SPEAKER_address[@]}"
   echo "${MIC_address[@]}"
 
-
-
-
+  case "${#SPEAKER_address[@]}" in
+  0)
+    SPEAKER_CARD_DEVICE="0,0"
+    ;;
+  1)
+    SPEAKER_CARD_DEVICE="${SPEAKER_address[1]}"
+    ;;
+  *)
+    echo "More than 1"
+  ;;
+  esac
 }
 
 config_Speaker() {
@@ -76,7 +76,6 @@ config_Speaker() {
   }" >>.asoundrc
 
   amixer set Master 70%
-
 
 }
 
