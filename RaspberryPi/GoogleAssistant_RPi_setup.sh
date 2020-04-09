@@ -1,6 +1,27 @@
 #!/bin/bash
 
-CLIENT_SECRET=${1}
+#### Option Input
+while [ -n "${1-}" ]; do
+  case "$1" in
+  -mic) MIC_test="$2"
+    if [[ "$MIC_test" =~ .*",".* ]]; then
+      MIC_address="${MIC_test}"
+      echo "MICROPHONE SET TO: $MIC_address"
+    fi
+    ;;
+  -speaker) SPEAKER_test="$2"
+    if [[ "$SPEAKER_test" =~ .*",".* ]]; then
+      SPEAKER_address="${SPEAKER_test}"
+      echo "SPEAKER SET TO: $SPEAKER_address"
+    fi
+    ;;
+    --client-secret) CLIENT_SECRET="$2"
+      echo "${CLIENT_SECRET}"
+    ;;
+  --) shift ; break ;;
+  esac
+  shift
+done
 
 install_GA_DEP() {
   apt -qq update
@@ -16,54 +37,9 @@ install_GA() {
   google-oauthlib-tool --scope https://www.googleapis.com/auth/assistant-sdk-prototype --save --headless --client-secrets "${CLIENT_SECRET}"
 }
 
-resolve_SPEAKER() {
-  local CONFIRM_STATE=0
-
-  while [ "${CONFIRM_STATE}" == 0 ]; do
-    for i in "${!SPEAKER_address[@]}" ; do
-      SPEAKER_CARD_DEVICE="${SPEAKER_address[i]}"
-
-    done
-
-  done
-}
-
-config_Audio_IO() {
-  local SPEAKER_card_array=() SPEAKER_device_array=() SPEAKER_address=()
-  local MIC_card_array=() MIC_device_array=() MIC_address=()
-  local MIC_CARD_DEVICE SPEAKER_CARD_DEVICE
-
-  mapfile -t SPEAKER_card_array < <(aplay -l | grep -oP '(?<=card )[0-9]+')
-  mapfile -t SPEAKER_device_array < <(aplay -l | grep -oP '(?<=device )[0-9]+')
-  mapfile -t MIC_card_array < <(arecord -l | grep -oP '(?<=card )[0-9]+')
-  mapfile -t MIC_device_array < <(arecord -l | grep -oP '(?<=device )[0-9]+')
-
-  for i in "${!SPEAKER_card_array[@]}"; do
-    SPEAKER_address+=( "${SPEAKER_card_array[i]},${SPEAKER_device_array[i]}" )
-  done
-
-  for i in "${!MIC_card_array[@]}"; do
-    MIC_address+=( "${MIC_card_array[i]},${MIC_device_array[i]}" )
-  done
-
-  echo "${SPEAKER_address[@]}"
-  echo "${MIC_address[@]}"
-
-  case "${#SPEAKER_address[@]}" in
-  0)
-    SPEAKER_CARD_DEVICE="0,0"
-    ;;
-  1)
-    SPEAKER_CARD_DEVICE="${SPEAKER_address[0]}"
-    ;;
-  *)
-    resolve_SPEAKER "${SPEAKER_address[0]}"
-  ;;
-  esac
-}
-
 config_Speaker() {
-
+  rm -rf ~/.asoundrc
+  touch ~/.asoundrc
   echo "pcm.!default {
   type asym
   capture.pcm 'mic'
@@ -72,21 +48,19 @@ config_Speaker() {
   pcm.mic {
     type plug
     slave {
-      pcm 'hw:${MIC_CARD},${MIC_DEVICE}'
+      pcm 'hw:${MIC_address}'
       }
     }
   pcm.speaker {
     type plug
     slave {
-    pcm 'hw:${SOUND_CARD},${SOUND_DEVICE}'
+    pcm 'hw:${SPEAKER_address}'
       rate 16000
     }
-  }" >>.asoundrc
-
+  }" >> ~/.asoundrc
   amixer set Master 70%
-
 }
 
-
-
-config_Audio_IO
+install_GA_DEP
+install_GA
+config_Speaker
