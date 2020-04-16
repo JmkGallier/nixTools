@@ -5,7 +5,7 @@ set -o pipefail
 #### SCRIPT PARAMETERS
 declare -A SCRIPT_STATE_OPTIONS
 declare -A IS_VIRTUAL_ENV_OPTIONS
-SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1)
+SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1 ["sys_upgrade"]=1 ["git_config"]=1 ["fresh_install"]=1)
 IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
@@ -112,10 +112,9 @@ config_GitIdent() {
     printf "\n"
     git config --global user.name "${gitUser}"
     git config --global user.email "${gitEmail}"
-    git config --list | grep user
-    printf "\n"
+    git config --list | grep "user" | grep -o '=.*' | cut -b 2-
 
-    echo "Are the details above correct?"
+    printf "\nAre the details above correct?\n"
     select yn in "Yes" "No"; do
       case $yn in
       Yes)
@@ -176,10 +175,19 @@ script_Main() {
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
         CURRENT_SCRIPT_STATE="none"
         ;;
-      prod)
+      sys_upgrade)
+        echo "Script State: ${CURRENT_SCRIPT_STATE}"
+        system_Refresh
+        CURRENT_SCRIPT_STATE="none"
+        ;;
+      git_config)
+        echo "Script State: ${CURRENT_SCRIPT_STATE}"
+        config_GitIdent
+        CURRENT_SCRIPT_STATE="none"
+        ;;
+      fresh_install)
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
         config_FreshSystem
-        config_GitIdent
         CURRENT_SCRIPT_STATE="none"
         ;;
       *)
