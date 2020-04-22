@@ -8,12 +8,22 @@ scripts which automate much of the repetitive tasks experienced system-to-system
 The purpose of this tool is to automate package installation and system configuration.
 
 #### How to use
+Currently, these scripts are made to be downloaded and made executable with:
+```bash
+chmod +x nixTool.sh
+```
+
+The script can be called with various options which will affect operations performed on the system.
+If you are running nixTool on a VM, make sure to set the "guest" flag with:
+```bash
+./nixtool -v host
+```
 
 #### To Do:
 ###### Milestones/"Features"
-* [ ] Apply switch/case handle for 'Script State' 
-* [ ] Implement 'Dialog' CLI Interface & user selection of packagesets
-* [ ] Options
+* [ ] Implement 'Dialog' CLI Interface & user selection of packages
+* [x] Apply switch/case handle for 'Script State' 
+* [x] Options
 
 ###### Security
 * [ ] Link handling on JBToolBox and prep_VBox
