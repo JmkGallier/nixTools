@@ -5,12 +5,36 @@ set -o pipefail
 #### SCRIPT PARAMETERS
 declare -A SCRIPT_STATE_OPTIONS
 declare -A IS_VIRTUAL_ENV_OPTIONS
-SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1 ["sys_upgrade"]=1 ["git_config"]=1 ["fresh_install"]=1)
+SCRIPT_STATE_OPTIONS=(
+  ["none"]=1
+  ["test"]=1
+  ["dev"]=1
+  ["prod"]=1
+  ["sys_upgrade"]=1
+  ["git_config"]=1
+  ["fresh_install"]=1
+)
+
 IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
+
+#### SCRIPT STATE
 DEFAULT_SCRIPT_STATE="none"
-CURRENT_SCRIPT_STATE=${1:-$DEFAULT_SCRIPT_STATE}
-USER_HOME=$HOME
+CURRENT_SCRIPT_STATE="none"
 IS_VIRTUAL_ENV="host"
+
+#### USER PARAMETERS
+SCRIPT_USER="$(logname)"
+USER_HOME="/home/${SCRIPT_USER}"
+
+#### INSTALLATION PACKAGES
+### PACKAGE LIBRARIES
+INDIVIDUAL_PACKAGES=(wget snapd steam-installer neofetch nmap deluge htop)
+EXFAT_PACKAGE_SET=(exfat-fuse exfat-utils)
+MULTIMEDIA_PACKAGE=(libavcodec-extra)
+THEME_PACKAGES=(arc-theme)
+PYTHON_IDE_PACKAGE_SET=(python3-distutils python3-pip)
+VBOX_PACKAGE_SET=(virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms)
+GNOME_EXT_PACKAGE_SET=(gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell)
 
 #### Option Input
 while [ -n "${1-}" ]; do
@@ -65,16 +89,16 @@ prep_ClearScriptDirs() {
 }
 
 # Prepare Virtual Box Install
-# Update links/Stop relying on links
 prep_VBox() {
+  # Update links/Stop relying on links
   wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
   apt-key add oracle_vbox_2016.asc
   add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
 }
 
 # Install JetBrains Toolbox App
-# Update links/Stop relying on links
 install_JBToolbox() {
+  # Update links/Stop relying on links
   wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
   tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
   mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${USER_HOME}"/.local/bin/
@@ -82,17 +106,17 @@ install_JBToolbox() {
 }
 
 # Apply Audio sink to fix Microphone-Speaker Echo
-# Implement necessity check before running
 fix_PulseAudioEcho() {
+  # Implement necessity check before running
   echo 'load-module module-echo-cancel source_name=logitechsource' >>/etc/pulse/default.pa
   echo 'set-default-source logitechsource' >>/etc/pulse/default.pa
 }
 
 # Apply fix for screen tearing on systems with intel-gpu
-# Implement nessecity check before running
-# This requires a check for dir&file in question
-# This requires a check textstring echoed into file
 fix_IntelScreenTear() {
+  # Implement nessecity check before running
+  # This requires a check for dir&file in question
+  # This requires a check textstring echoed into file
   mkdir -p /etc/X11/xorg.conf.d/
   echo 'Section "Device"
      Identifier  "Intel Graphics"
@@ -112,9 +136,8 @@ config_GitIdent() {
     printf "\n"
     git config --global user.name "${gitUser}"
     git config --global user.email "${gitEmail}"
-    git config --list | grep "user" | grep -o '=.*' | cut -b 2-
 
-    printf "\nAre the details above correct?\n"
+    printf "Are the details above correct?\n"
     select yn in "Yes" "No"; do
       case $yn in
       Yes)
@@ -128,7 +151,7 @@ config_GitIdent() {
   done
 }
 
-#### SCRIPT START ####
+# Preform basic installations for Fresh System
 config_FreshSystem() {
   #System Handlers
   system_Refresh
@@ -169,6 +192,8 @@ script_Main() {
     case $CURRENT_SCRIPT_STATE in
       test)
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
+        echo "${SCRIPT_USER}"
+        echo "${USER_HOME}"
         CURRENT_SCRIPT_STATE="none"
         ;;
       dev)
