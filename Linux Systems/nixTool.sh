@@ -17,14 +17,17 @@ SCRIPT_STATE_OPTIONS=(
 
 IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
 
+#### USER STATE
+SCRIPT_USER="$(logname)"
+SCRIPT_OWNER="$USER"
+USER_HOME="/home/${SCRIPT_USER}"
+USER_IS_ROOT=$([ "$SCRIPT_OWNER" = "root" ] && echo "true" || echo "false")
+
 #### SCRIPT STATE
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE="none"
 IS_VIRTUAL_ENV="host"
 
-#### USER PARAMETERS
-SCRIPT_USER="$(logname)"
-USER_HOME="/home/${SCRIPT_USER}"
 
 #### INSTALLATION PACKAGES
 ### PACKAGE LIBRARIES
@@ -192,8 +195,8 @@ script_Main() {
     case $CURRENT_SCRIPT_STATE in
       test)
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
-        echo "${SCRIPT_USER}"
-        echo "${USER_HOME}"
+        echo "${SCRIPT_OWNER}"
+        echo "${USER_IS_ROOT}"
         CURRENT_SCRIPT_STATE="none"
         ;;
       dev)
@@ -201,9 +204,17 @@ script_Main() {
         CURRENT_SCRIPT_STATE="none"
         ;;
       sys_upgrade)
-        echo "Script State: ${CURRENT_SCRIPT_STATE}"
-        system_Refresh
-        CURRENT_SCRIPT_STATE="none"
+        case $USER_IS_ROOT in
+        true)
+          echo "Script State: ${CURRENT_SCRIPT_STATE}"
+          system_Refresh
+          CURRENT_SCRIPT_STATE="none"
+          ;;
+        false)
+          echo "Please use sudo when performing sys_upgrade"
+          CURRENT_SCRIPT_STATE="none"
+          ;;
+        esac
         ;;
       git_config)
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
@@ -211,9 +222,17 @@ script_Main() {
         CURRENT_SCRIPT_STATE="none"
         ;;
       fresh_install)
-        echo "Script State: ${CURRENT_SCRIPT_STATE}"
-        config_FreshSystem
-        CURRENT_SCRIPT_STATE="none"
+        case $USER_IS_ROOT in
+          true)
+            echo "Script State: ${CURRENT_SCRIPT_STATE}"
+            config_FreshSystem
+            CURRENT_SCRIPT_STATE="none"
+            ;;
+          false)
+            echo "Please use sudo when performing fresh_install"
+            CURRENT_SCRIPT_STATE="none"
+            ;;
+        esac
         ;;
       *)
         echo "Invalid Script State: ${CURRENT_SCRIPT_STATE}"
