@@ -15,8 +15,8 @@ while [ -n "${1-}" ]; do
       echo "SPEAKER SET TO: $SPEAKER_address"
     fi
     ;;
-    --client-secret) CLIENT_SECRET="$2"
-      echo "${CLIENT_SECRET}"
+    --client-secret) CLIENT_SECRET_PATH="$2"
+      echo "${CLIENT_SECRET_PATH}"
     ;;
   --) shift ; break ;;
   esac
@@ -24,8 +24,8 @@ while [ -n "${1-}" ]; do
 done
 
 install_GA_DEP() {
-  apt -qq update
-  apt -qq install portaudio19-dev libffi-dev libssl-dev python3-dev python3-venv python-serial python3-serial -y
+  sudo apt -qq update
+  sudo apt -qq install portaudio19-dev libffi-dev libssl-dev python3-dev python3-venv python-serial python3-serial -y
 }
 
 install_GA() {
@@ -33,7 +33,7 @@ install_GA() {
   env/bin/python3 -m pip install --upgrade pip setuptools wheel
   source env/bin/activate
   python3 -m pip install --upgrade google-assistant-sdk[samples] google-auth-oauthlib[tool]
-  google-oauthlib-tool --scope https://www.googleapis.com/auth/assistant-sdk-prototype --save --headless --client-secrets "${CLIENT_SECRET}"
+  google-oauthlib-tool --scope https://www.googleapis.com/auth/assistant-sdk-prototype --save --headless --client-secrets "${CLIENT_SECRET_PATH}"
 }
 
 config_Speaker() {
