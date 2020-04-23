@@ -25,7 +25,7 @@ done
 
 install_GA_DEP() {
   apt -qq update
-  apt -qq install portaudio19-dev libffi-dev libssl-dev python3-dev python3-venv -y
+  apt -qq install portaudio19-dev libffi-dev libssl-dev python3-dev python3-venv python-serial python3-serial -y
 }
 
 install_GA() {
