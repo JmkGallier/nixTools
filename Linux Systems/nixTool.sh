@@ -119,9 +119,11 @@ prep_VBox() {
 install_JBToolbox() {
   # Update links/Stop relying on links
   wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.17.6802.tar.gz
-  tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
-  mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${USER_HOME}"/.local/bin/
+  tar -xzf jetbrains-toolbox-*.tar.gz
   rm -rf jetbrains-toolbox-1.16.6207.tar.gz
+  mv jetbrains-toolbox-* jetbrains-toolbox-dir
+  mv jetbrains-toolbox-dir/jetbrains-toolbox "${USER_HOME}"/.local/bin/
+  rm -rf jetbrains-toolbox-dir
 }
 
 # Apply Audio sink to fix Microphone-Speaker Echo
