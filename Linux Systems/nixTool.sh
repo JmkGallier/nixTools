@@ -118,7 +118,7 @@ prep_VBox() {
 # Install JetBrains Toolbox App
 install_JBToolbox() {
   # Update links/Stop relying on links
-  wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.16.6207.tar.gz
+  wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.17.6802.tar.gz
   tar -xzf jetbrains-toolbox-1.16.6207.tar.gz
   mv jetbrains-toolbox-1.16.6207/jetbrains-toolbox "${USER_HOME}"/.local/bin/
   rm -rf jetbrains-toolbox-1.16.6207.tar.gz
