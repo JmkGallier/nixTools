@@ -1,18 +1,11 @@
 #!/bin/bash
 set -e
-set -o pipefail
+#set -o pipefail
 
 #### SCRIPT PARAMETERS
-declare -A SCRIPT_STATE_OPTIONS
-declare -A IS_VIRTUAL_ENV_OPTIONS
-SCRIPT_STATE_OPTIONS=(["none"]=1 ["test"]=1 ["dev"]=1 ["prod"]=1)
-IS_VIRTUAL_ENV_OPTIONS=(["true"]=1 ["false"]=1)
-DEFAULT_SCRIPT_STATE="none"
-IS_VIRTUAL_ENV="false"
-CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
 #USER_HOME=$HOME
-#USER_CURRENT_DISTRO=#env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2-
-#USER_CURRENT_DE=#env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2-
+USER_CURRENT_DE=$(env | grep XDG_CURRENT_DESKTOP | cut -d ':' -f 2-)
+USER_CURRENT_DISTRO=$(env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2- | cut -d ":" -f -1)
 #LOCAL_KERN_VERSION=#uname -v
 
 
@@ -42,3 +35,6 @@ CURRENT_SCRIPT_STATE="${DEFAULT_SCRIPT_STATE}"
 #sensors
 #apt install psensor
 # - -
+
+echo "Current DE: ${USER_CURRENT_DE}"
+echo "Current Distro: ${USER_CURRENT_DISTRO}"

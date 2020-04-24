@@ -14,19 +14,21 @@ SCRIPT_STATE_OPTIONS=(
   ["git_config"]=1
   ["fresh_install"]=1
 )
-
 IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
 
 #### USER STATE
 SCRIPT_USER="$(logname)"
 SCRIPT_OWNER="$USER"
 USER_HOME="/home/${SCRIPT_USER}"
-USER_IS_ROOT=$([ "$SCRIPT_OWNER" = "root" ] && echo "true" || echo "false")
+USER_CURRENT_DE=$(env | grep XDG_CURRENT_DESKTOP | cut -d ':' -f 2-)
+#USER_CURRENT_DISTRO=$(env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2- | cut -d ":" -f -1)
 
 #### SCRIPT STATE
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE="none"
+USER_IS_ROOT=$([ "$SCRIPT_OWNER" = "root" ] && echo "true" || echo "false")
 IS_VIRTUAL_ENV="host"
+ENV_IS_GNOME=$([ "$USER_CURRENT_DE" = "GNOME" ] && echo "true" || echo "false")
 
 
 #### INSTALLATION PACKAGES
@@ -154,7 +156,34 @@ config_GitIdent() {
   done
 }
 
-# Preform basic installations for Fresh System
+install_AptPackages() {
+  local packages_arr=()
+
+  # Restrict VBox packages from being install in guest installs
+  if [ "${IS_VIRTUAL_ENV}" = "false" ]; then
+    packages_arr=("${packages_arr[@]}" "${VBOX_PACKAGE_SET[@]}")
+  fi
+
+  # Restrict Gnome Extension packages to Gnome installations
+  if [ "${ENV_IS_GNOME}" = "true" ]; then
+    packages_arr=("${packages_arr[@]}" "${GNOME_EXT_PACKAGE_SET[@]}")
+  fi
+
+  # Add all other packages (Milestone -> Dialog Window)
+  packages_arr=(
+  "${packages_arr[@]}"
+  "${INDIVIDUAL_PACKAGES[@]}"
+  "${EXFAT_PACKAGE_SET[@]}"
+  "${MULTIMEDIA_PACKAGE[@]}"
+  "${THEME_PACKAGES[@]}"
+  "${PYTHON_IDE_PACKAGE_SET[@]}"
+  )
+
+  apt install "${packages_arr[@]}" -y
+
+}
+
+# Preform basic installations for Fresh Installations
 config_FreshSystem() {
   #System Handlers
   system_Refresh
@@ -165,14 +194,8 @@ config_FreshSystem() {
   prep_VBox
 
   # Mass Package Installation
-  # use Dialog to handle package selection
-  # Use IS_VIRTUAL_ENV to exclude/include virtualbox packages
-  apt -qq update && sleep 3
-  apt install wget snapd steam-installer neofetch exfat-fuse exfat-utils -y
-  apt install nmap deluge htop arc-theme -y
-  apt install python3-distutils python3-pip libavcodec-extra -y
-  apt install virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms -y
-  apt install gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell -y
+  apt -qq update
+  install_AptPackages
 
   ## Install Snap Packages
   #snap install spotify
