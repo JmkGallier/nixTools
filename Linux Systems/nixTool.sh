@@ -120,10 +120,9 @@ install_JBToolbox() {
   # Update links/Stop relying on links
   wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-1.17.6802.tar.gz
   tar -xzf jetbrains-toolbox-*.tar.gz
-  rm -rf jetbrains-toolbox-1.16.6207.tar.gz
-  mv jetbrains-toolbox-* jetbrains-toolbox-dir
-  mv jetbrains-toolbox-dir/jetbrains-toolbox "${USER_HOME}"/.local/bin/
-  rm -rf jetbrains-toolbox-dir
+  rm -rf jetbrains-toolbox-*.tar.gz
+  mv -v jetbrains-toolbox-*/* "${USER_HOME}"/.local/bin/
+  rm -rf jetbrains-toolbox-*
 }
 
 # Apply Audio sink to fix Microphone-Speaker Echo
@@ -230,6 +229,10 @@ config_FreshSystem() {
 
 script_Main() {
   while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
+
+    ## Create System Status function
+    ## includes all options and current parameters
+
     case $CURRENT_SCRIPT_STATE in
       test)
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
