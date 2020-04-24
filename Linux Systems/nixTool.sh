@@ -5,6 +5,7 @@ set -o pipefail
 #### SCRIPT PARAMETERS
 declare -A SCRIPT_STATE_OPTIONS
 declare -A IS_VIRTUAL_ENV_OPTIONS
+declare -A DESKTOP_ENV_OPTIONS
 SCRIPT_STATE_OPTIONS=(
   ["none"]=1
   ["test"]=1
@@ -14,22 +15,28 @@ SCRIPT_STATE_OPTIONS=(
   ["git_config"]=1
   ["fresh_install"]=1
 )
+DESKTOP_ENV_OPTIONS=(
+  ["gnome"]=1
+  ["xfce"]=1
+)
 IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
+
 
 #### USER STATE
 SCRIPT_USER="$(logname)"
 SCRIPT_OWNER="$USER"
 USER_HOME="/home/${SCRIPT_USER}"
-USER_CURRENT_DE=$(env | grep XDG_CURRENT_DESKTOP | cut -d ':' -f 2-)
-#USER_CURRENT_DISTRO=$(env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2- | cut -d ":" -f -1)
+
+# !X! Correct SubShell Errors
+#USER_CURRENT_DE=$(env | grep XDG_CURRENT_DESKTOP | cut -d ':' -f 2-)
+#USER_CURRENT_DISTRO=$(env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2- | cut -d ':' -f -1)
+#ENV_IS_GNOME=$([ "$USER_CURRENT_DE" = "GNOME" ] && echo "true" || echo "false")
 
 #### SCRIPT STATE
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE="none"
 USER_IS_ROOT=$([ "$SCRIPT_OWNER" = "root" ] && echo "true" || echo "false")
 IS_VIRTUAL_ENV="host"
-ENV_IS_GNOME=$([ "$USER_CURRENT_DE" = "GNOME" ] && echo "true" || echo "false")
-
 
 #### INSTALLATION PACKAGES
 ### PACKAGE LIBRARIES
@@ -55,6 +62,13 @@ while [ -n "${1-}" ]; do
     if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
     else
       echo "${IS_VIRTUAL_ENV} is not a valid option"
+      CURRENT_SCRIPT_STATE="none"
+    fi
+    ;;
+  -DE) DESKTOP_ENV="$2"
+    if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
+    else
+      echo "${DESKTOP_ENV} is not a valid option"
       CURRENT_SCRIPT_STATE="none"
     fi
     ;;
@@ -165,7 +179,7 @@ install_AptPackages() {
   fi
 
   # Restrict Gnome Extension packages to Gnome installations
-  if [ "${ENV_IS_GNOME}" = "true" ]; then
+  if [ "${DESKTOP_ENV}" = "gnome" ]; then
     packages_arr=("${packages_arr[@]}" "${GNOME_EXT_PACKAGE_SET[@]}")
   fi
 
@@ -180,7 +194,6 @@ install_AptPackages() {
   )
 
   apt install "${packages_arr[@]}" -y
-
 }
 
 # Preform basic installations for Fresh Installations
