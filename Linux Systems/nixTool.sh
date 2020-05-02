@@ -2,7 +2,7 @@
 set -e
 set -o pipefail
 
-#### SCRIPT PARAMETERS
+#### OPTION PARAMETERS
 declare -A SCRIPT_STATE_OPTIONS
 declare -A IS_VIRTUAL_ENV_OPTIONS
 declare -A DESKTOP_ENV_OPTIONS
@@ -23,6 +23,9 @@ IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
 
 
 #### USER STATE
+# Some Linux OSes such as Raspbian have default users (i.e. "pi") with no
+# user name set in environment variables. Create a software catch for this
+# anomaly.
 SCRIPT_USER="$(logname)"
 SCRIPT_OWNER="$USER"
 USER_HOME="/home/${SCRIPT_USER}"
@@ -175,7 +178,7 @@ install_AptPackages() {
   local packages_arr=()
 
   # Restrict VBox packages from being install in guest installs
-  if [ "${IS_VIRTUAL_ENV}" = "false" ]; then
+  if [ "${IS_VIRTUAL_ENV}" = "host" ]; then
     packages_arr=("${packages_arr[@]}" "${VBOX_PACKAGE_SET[@]}")
   fi
 
