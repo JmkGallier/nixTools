@@ -26,9 +26,11 @@ IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
 # Some Linux OSes such as Raspbian have default users (i.e. "pi") with no
 # user name set in environment variables. Create a software catch for this
 # anomaly.
+OS_RELEASE=$(lsb_release -cs)
 SCRIPT_USER="$(logname)"
 SCRIPT_OWNER="$USER"
 USER_HOME="/home/${SCRIPT_USER}"
+
 
 # !X! Correct SubShell Errors
 #USER_CURRENT_DE=$(env | grep XDG_CURRENT_DESKTOP | cut -d ':' -f 2-)
@@ -115,7 +117,7 @@ prep_VBox() {
   # Update links/Stop relying on links
   wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
   apt-key add oracle_vbox_2016.asc
-  add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
+  add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian ${OS_RELEASE} contrib"
 }
 
 # Install JetBrains Toolbox App
@@ -179,6 +181,7 @@ install_AptPackages() {
 
   # Restrict VBox packages from being install in guest installs
   if [ "${IS_VIRTUAL_ENV}" = "host" ]; then
+    prep_VBox
     packages_arr=("${packages_arr[@]}" "${VBOX_PACKAGE_SET[@]}")
   fi
 
@@ -208,7 +211,6 @@ config_FreshSystem() {
 
   # Requested Package Section (Prep-Req)
   install_JBToolbox
-  prep_VBox
 
   # Mass Package Installation
   apt -qq update
@@ -217,10 +219,6 @@ config_FreshSystem() {
   ## Install Snap Packages
   #snap install spotify
   #snap install atom --classic
-
-  ## Hotfixes
-  fix_PulseAudioEcho
-  fix_IntelScreenTear
 
   ## Delete Sandbox directory
   prep_ClearScriptDirs
