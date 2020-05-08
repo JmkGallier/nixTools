@@ -62,7 +62,7 @@ while [ -n "${1-}" ]; do
       echo "${CURRENT_SCRIPT_STATE} is not a valid option"
       CURRENT_SCRIPT_STATE="none"
     fi
-      ;;
+    ;;
   -v) IS_VIRTUAL_ENV="$2"
     if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
     else
@@ -235,45 +235,45 @@ script_Main() {
     ## includes all options and current parameters
 
     case $CURRENT_SCRIPT_STATE in
-      test)
+    test)
+      echo "Script State: ${CURRENT_SCRIPT_STATE}"
+      echo "${SCRIPT_OWNER}"
+      echo "${USER_IS_ROOT}"
+      CURRENT_SCRIPT_STATE="none"
+      ;;
+    dev)
+      echo "Script State: ${CURRENT_SCRIPT_STATE}"
+      CURRENT_SCRIPT_STATE="none"
+      ;;
+    sys_upgrade)
+      case $USER_IS_ROOT in
+      true)
         echo "Script State: ${CURRENT_SCRIPT_STATE}"
-        echo "${SCRIPT_OWNER}"
-        echo "${USER_IS_ROOT}"
+        system_Refresh
         CURRENT_SCRIPT_STATE="none"
         ;;
-      dev)
-        echo "Script State: ${CURRENT_SCRIPT_STATE}"
+      false)
+        echo "Please use sudo when performing sys_upgrade"
         CURRENT_SCRIPT_STATE="none"
         ;;
-      sys_upgrade)
-        case $USER_IS_ROOT in
+      esac
+      ;;
+    git_config)
+      echo "Script State: ${CURRENT_SCRIPT_STATE}"
+      config_GitIdent
+      CURRENT_SCRIPT_STATE="none"
+      ;;
+    fresh_install)
+      case $USER_IS_ROOT in
         true)
           echo "Script State: ${CURRENT_SCRIPT_STATE}"
-          system_Refresh
+          config_FreshSystem
           CURRENT_SCRIPT_STATE="none"
           ;;
         false)
-          echo "Please use sudo when performing sys_upgrade"
+          echo "Please use sudo when performing fresh_install"
           CURRENT_SCRIPT_STATE="none"
           ;;
-        esac
-        ;;
-      git_config)
-        echo "Script State: ${CURRENT_SCRIPT_STATE}"
-        config_GitIdent
-        CURRENT_SCRIPT_STATE="none"
-        ;;
-      fresh_install)
-        case $USER_IS_ROOT in
-          true)
-            echo "Script State: ${CURRENT_SCRIPT_STATE}"
-            config_FreshSystem
-            CURRENT_SCRIPT_STATE="none"
-            ;;
-          false)
-            echo "Please use sudo when performing fresh_install"
-            CURRENT_SCRIPT_STATE="none"
-            ;;
         esac
         ;;
       *)
