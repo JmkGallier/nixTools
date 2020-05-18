@@ -33,7 +33,7 @@ USER_HOME="/home/${SCRIPT_USER}"
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE="none"
 USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
-SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Should actually bel located somewhere in opt or vars
+SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Change Sandbox prefix /opt/nixtools/ # Requires all downloads explicitly pointed to /opt/nixtools
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
