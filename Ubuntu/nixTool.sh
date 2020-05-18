@@ -19,7 +19,6 @@ DESKTOP_ENV_OPTIONS=(
   ["gnome"]=1
   ["xfce"]=1
 )
-IS_VIRTUAL_ENV_OPTIONS=(["true"]=1 ["false"]=1)
 
 
 #### SYSTEM/USER/SCRIPT STATE
@@ -34,6 +33,7 @@ USER_HOME="/home/${SCRIPT_USER}"
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE="none"
 USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
+SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Should actually bel located somewhere in opt or vars
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
@@ -64,7 +64,12 @@ while [ -n "${1-}" ]; do
   -v)
     SYSTEM_IS_VIRTUAL="true"
     ;;
-  -DE) DESKTOP_ENV="$2"
+  --DE-install)
+    # This enables the installation of a desktop environment
+    echo "Feature not available"
+    ;;
+  -de) DESKTOP_ENV="$2"
+    # This Param option is for explicitly stating the desktop environment due to issues with using sudo with env-vars
     if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
     else
       echo "${DESKTOP_ENV} is not a valid option"
@@ -109,10 +114,10 @@ system_Refresh() {
 # Prepare directories to be used by script
 # Check permissions on created directories
 prep_CreateScriptDirs() {
-  mkdir -p "${USER_HOME}"/Downloads/Sandbox/
-  mkdir -p "${USER_HOME}"/.local/bin/
+  mkdir -p "${SANDBOX_DIR}" # Include test for dir
+  mkdir -p "${USER_HOME}/.local/bin/" # Include test for dir
   cp /etc/apt/sources.list /etc/apt/sources.list.bak
-  cd "${USER_HOME}"/Downloads/Sandbox/ || {
+  cd "${SANDBOX_DIR}" || {
     echo "Could not reach 'Sandbox' directory. Exiting Script."
     exit 1
   }
@@ -124,13 +129,13 @@ prep_ClearScriptDirs() {
     echo "Could not reach 'home' directory. Exiting Script."
     exit 1
   }
-  rm -rf "${USER_HOME}"/Downloads/Sandbox/
+  rm -rf "${SANDBOX_DIR}"
 }
 
 # Prepare Virtual Box Install
 prep_VBox() {
   # Update links/Stop relying on links
-  wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc
+  wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc # Output prefix -p to sandbox
   apt-key add oracle_vbox_2016.asc
   add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian ${OS_RELEASE} contrib"
 }
@@ -146,14 +151,14 @@ install_JBToolbox() {
 }
 
 # Apply Audio sink to fix Microphone-Speaker Echo
-fix_PulseAudioEcho() {
+patch_PulseAudioEcho() {
   # Implement necessity check before running
   echo 'load-module module-echo-cancel source_name=logitechsource' >>/etc/pulse/default.pa
   echo 'set-default-source logitechsource' >>/etc/pulse/default.pa
 }
 
 # Apply fix for screen tearing on systems with intel-gpu
-fix_IntelScreenTear() {
+patch_IntelScreenTear() {
   # Implement nessecity check before running
   # This requires a check for dir&file in question
   # This requires a check textstring echoed into file
