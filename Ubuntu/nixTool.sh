@@ -19,29 +19,27 @@ DESKTOP_ENV_OPTIONS=(
   ["gnome"]=1
   ["xfce"]=1
 )
-IS_VIRTUAL_ENV_OPTIONS=(["guest"]=1 ["host"]=1)
+IS_VIRTUAL_ENV_OPTIONS=(["true"]=1 ["false"]=1)
 
 
-#### USER STATE
-# Some Linux OSes such as Raspbian have default users (i.e. "pi") with no
-# user name set in environment variables. Create a software catch for this
-# anomaly.
+#### SYSTEM/USER/SCRIPT STATE
+SYSTEM_DISTRIBUTION="${DESKTOP_SESSION}" || echo "Use 'sudo -E <command>'."
 OS_RELEASE=$(lsb_release -cs)
-SCRIPT_USER="$(logname)"
-SCRIPT_OWNER="$USER"
+SYSTEM_DESKTOP=$(echo "$XDG_CURRENT_DESKTOP" | cut -d ":" -f 2-)
+SYSTEM_IS_VIRTUAL="false"
+
+SCRIPT_USER=$(printf '%s\n' "${SUDO_USER:-$USER}")
+SCRIPT_CALLER="$USER"
 USER_HOME="/home/${SCRIPT_USER}"
-
-
-# !X! Correct SubShell Errors
-#USER_CURRENT_DE=$(env | grep XDG_CURRENT_DESKTOP | cut -d ':' -f 2-)
-#USER_CURRENT_DISTRO=$(env | grep XDG_CURRENT_DESKTOP | cut -d '=' -f 2- | cut -d ':' -f -1)
-#ENV_IS_GNOME=$([ "$USER_CURRENT_DE" = "GNOME" ] && echo "true" || echo "false")
-
-#### SCRIPT STATE
 DEFAULT_SCRIPT_STATE="none"
 CURRENT_SCRIPT_STATE="none"
-USER_IS_ROOT=$([ "$SCRIPT_OWNER" = "root" ] && echo "true" || echo "false")
-IS_VIRTUAL_ENV="host"
+USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
+SCRIPT_FILE="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
+SCRIPT_BASE="$(basename "${SCRIPT_FILE}")"
+
 
 #### INSTALLATION PACKAGES
 ### PACKAGE LIBRARIES
@@ -63,12 +61,8 @@ while [ -n "${1-}" ]; do
       CURRENT_SCRIPT_STATE="none"
     fi
     ;;
-  -v) IS_VIRTUAL_ENV="$2"
-    if [[ ${IS_VIRTUAL_ENV_OPTIONS[$IS_VIRTUAL_ENV]} ]]; then :
-    else
-      echo "${IS_VIRTUAL_ENV} is not a valid option"
-      CURRENT_SCRIPT_STATE="none"
-    fi
+  -v)
+    SYSTEM_IS_VIRTUAL="true"
     ;;
   -DE) DESKTOP_ENV="$2"
     if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
@@ -83,6 +77,27 @@ while [ -n "${1-}" ]; do
 done
 
 #### FUNCTIONS DECLARED
+
+# Print all User/Script parameters loaded at runtime
+script_PARAMETERS() {
+  printf "\nSYSTEM PARAMETERS:\n"
+  echo "SYSTEM_DISTRIBUTION=$SYSTEM_DISTRIBUTION"
+  echo "OS_RELEASE=$OS_RELEASE"
+  echo "SYSTEM_DESKTOP=$SYSTEM_DESKTOP"
+
+  printf "\nUSER PARAMETERS:\n"
+  echo "USER_IS_ROOT=$USER_IS_ROOT"
+  echo "USER_HOME=$USER_HOME"
+  echo "SYSTEM_IS_VIRTUAL=$SYSTEM_IS_VIRTUAL"
+
+  printf "\nSCRIPT PARAMETERS:\n"
+  echo "SCRIPT_USER=$SCRIPT_USER"
+  echo "SCRIPT_CALLER=$SCRIPT_CALLER"
+  echo "SCRIPT_FILE=$SCRIPT_FILE"
+  echo "SCRIPT_DIR=$SCRIPT_DIR"
+  echo "SCRIPT_ROOT=$SCRIPT_ROOT"
+  echo "SCRIPT_BASE=$SCRIPT_BASE"
+}
 
 # Bring system up-to-date
 system_Refresh() {
@@ -176,17 +191,23 @@ config_GitIdent() {
   done
 }
 
+prep_VBox_GuestAdditions() {
+  echo "[ERROR]: Contact system admin for help with this feature => prep_VBox_GuestAdditions"
+}
+
+
 install_AptPackages() {
   local packages_arr=()
 
   # Restrict VBox packages from being install in guest installs
-  if [ "${IS_VIRTUAL_ENV}" = "host" ]; then
-    prep_VBox
-    packages_arr=("${packages_arr[@]}" "${VBOX_PACKAGE_SET[@]}")
+  if [ "${SYSTEM_IS_VIRTUAL}" = "false" ]; then
+    prep_VBox && packages_arr=("${packages_arr[@]}" "${VBOX_PACKAGE_SET[@]}")
+  else
+    prep_VBox_GuestAdditions
   fi
 
   # Restrict Gnome Extension packages to Gnome installations
-  if [ "${DESKTOP_ENV}" = "gnome" ]; then
+  if [ "${SYSTEM_DE}" = "GNOME" ] || [ "${DESKTOP_ENV}" = "gnome" ]; then
     packages_arr=("${packages_arr[@]}" "${GNOME_EXT_PACKAGE_SET[@]}")
   fi
 
@@ -230,25 +251,18 @@ config_FreshSystem() {
 
 script_Main() {
   while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
-
-    ## Create System Status function
-    ## includes all options and current parameters
-
+    echo "Script State: ${CURRENT_SCRIPT_STATE}"
     case $CURRENT_SCRIPT_STATE in
     test)
-      echo "Script State: ${CURRENT_SCRIPT_STATE}"
-      echo "${SCRIPT_OWNER}"
-      echo "${USER_IS_ROOT}"
       CURRENT_SCRIPT_STATE="none"
       ;;
     dev)
-      echo "Script State: ${CURRENT_SCRIPT_STATE}"
+      script_PARAMETERS
       CURRENT_SCRIPT_STATE="none"
       ;;
     sys_upgrade)
       case $USER_IS_ROOT in
       true)
-        echo "Script State: ${CURRENT_SCRIPT_STATE}"
         system_Refresh
         CURRENT_SCRIPT_STATE="none"
         ;;
@@ -259,14 +273,12 @@ script_Main() {
       esac
       ;;
     git_config)
-      echo "Script State: ${CURRENT_SCRIPT_STATE}"
       config_GitIdent
       CURRENT_SCRIPT_STATE="none"
       ;;
     fresh_install)
       case $USER_IS_ROOT in
         true)
-          echo "Script State: ${CURRENT_SCRIPT_STATE}"
           config_FreshSystem
           CURRENT_SCRIPT_STATE="none"
           ;;
