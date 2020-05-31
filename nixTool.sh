@@ -8,7 +8,6 @@ declare -A SCRIPT_STATE_OPTIONS=(
   ["none"]=1
   ["test"]=1
   ["dev"]=1
-  ["prod"]=1
   ["System"]=1
   ["Patch"]=1
   ["Config"]=1
@@ -98,16 +97,12 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
         # This Param option is for explicitly stating the desktop environment due to issues with using sudo with env-vars
         if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
         else
-          echo "${DESKTOP_ENV} is not a valid option"
-          SCRIPT_CURRENT_STATE="none"
+          echo "${DESKTOP_ENV} is not a valid Desktop Environment."; printf "Exiting Script..."; exit 1
         fi
-        shift
-        shift
+        shift; shift
         ;;
       *)
-        echo "$1 Not a valid argument for System"
-        echo "Exiting Script"
-        exit 1
+        echo "$1 Not a valid argument for System"; printf "Exiting Script..."; exit 1
         ;;
       esac
     done
@@ -159,7 +154,6 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
   Config) # Config nixTools option that creates .conf file with system state etc
     SCRIPT_CURRENT_STATE="$1"
     echo "${OUT_OPT[@]}"
-    printf "Config is not supported in nixTool-master and has not implemented any Configuration changes."
     ;;
   *)
     echo "$1 Not a valid option"
@@ -290,7 +284,6 @@ prep_VBox_GuestAdditions() {
 }
 
 # Install Packages to system
-# Requires sudo
 install_AptPackages() {
   local packages_arr=()
 
@@ -344,13 +337,47 @@ config_FreshSystem() {
   clear && neofetch
 }
 
-script_Main() {
-  echo "Script State: ${SCRIPT_CURRENT_STATE}"
+script_Main_Patch() {
   case $USER_IS_ROOT in
   true)
-    case $SCRIPT_CURRENT_STATE in
-    System)
-      case $SCRIPT_DRIVER_STATE in
+    case $SCRIPT_DRIVER_STATE in
+    *)
+      echo "Patch not yet supported"
+      ;;
+    esac
+    ;;
+  false)
+    case $SCRIPT_DRIVER_STATE in
+    *)
+      echo "Patch not yet supported"
+      ;;
+    esac
+    ;;
+  esac
+}
+
+script_Main_Config() {
+  case $USER_IS_ROOT in
+  true)
+    case $SCRIPT_DRIVER_STATE in
+    *)
+      echo "The command you called cannot be run with sudo. Try --help"
+    esac
+    ;;
+  false)
+    case $SCRIPT_DRIVER_STATE in
+      git_config)
+      config_GitIdent
+      ;;
+    esac
+    ;;
+  esac
+}
+
+script_Main_System() {
+  case $USER_IS_ROOT in
+  true)
+    case $SCRIPT_DRIVER_STATE in
       Fresh)
         config_FreshSystem
         ;;
@@ -360,54 +387,35 @@ script_Main() {
       DeskEnv)
         echo "Not Supported"
         ;;
-      esac
-      ;;
-    Patch)
-      echo "Not Supported"
-      ;;
-    Config)
-      case $SCRIPT_DRIVER_STATE in
-      git_config)
-        echo "Do not run with sudo"
-        ;;
-      esac
-      ;;
-    test)
-      ;;
-    dev)
-      script_PARAMETERS
-      ;;
-    *)
-      echo "Unrecognized State, How did you get here?"
-      exit 1
     esac
     ;;
   false)
-    case $SCRIPT_CURRENT_STATE in
-    System)
-      echo "[INFO] Commands ' nixtool System <*argument*> ' require sudo"
-      ;;
-    Patch)
-      echo "Not Supported"
-      ;;
-    Config)
-      case $SCRIPT_DRIVER_STATE in
-      git_config)
-        config_GitIdent
-        ;;
-      esac
-      ;;
-    test)
-      echo "[INFO] No operations selected"
-      ;;
-    dev)
-      script_PARAMETERS
-      ;;
-    *)
-      echo "Unrecognized State, How did you get here?"
-      exit 1
-      ;;
-    esac
+    echo "[INFO] Commands ' nixtool System <*argument*> ' require sudo"
+    ;;
+  esac
+}
+
+script_Main() {
+  echo "Script State: ${SCRIPT_CURRENT_STATE}"
+  case $SCRIPT_CURRENT_STATE in
+  System)
+    script_Main_System
+    ;;
+  Config)
+    script_Main_Config
+    ;;
+  Patch)
+    script_Main_Patch
+    ;;
+  test)
+    printf "No test functions loaded."
+    ;;
+  dev)
+    script_PARAMETERS
+    ;;
+  *)
+    echo "Unrecognized State, How did you get here?"
+    exit 1
     ;;
   esac
 }
