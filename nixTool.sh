@@ -3,14 +3,15 @@ set -e
 set -o pipefail
 
 #### OPTION PARAMETERS
+OUT_OPT=()
 declare -A SCRIPT_STATE_OPTIONS=(
   ["none"]=1
   ["test"]=1
   ["dev"]=1
   ["prod"]=1
-  ["sys_upgrade"]=1
-  ["git_config"]=1
-  ["fresh_install"]=1
+  ["System"]=1
+  ["Patch"]=1
+  ["Config"]=1
 )
 declare -A DESKTOP_ENV_OPTIONS=(
   ["gnome"]=1
@@ -26,6 +27,9 @@ declare -A SCRIPT_PATCH_OPTIONS=(
   ["pulseaudio-echo"]=1
 )
 
+declare -A SCRIPT_CONFIG_OPTIONS=(
+  ["git_config"]=1
+)
 
 #### SYSTEM/USER/SCRIPT STATE # Basis for .conf
 SYSTEM_DISTRIBUTION="${DESKTOP_SESSION}" || echo "Use 'sudo -E <command>'." # Can be deprecated after .conf file
@@ -44,7 +48,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
 SCRIPT_FILE="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 SCRIPT_BASE="$(basename "${SCRIPT_FILE}")"
-SCRIPT_PASSED_STATE="none"
+SCRIPT_DRIVER_STATE="none"
 SCRIPT_DEFAULT_STATE="none"
 SCRIPT_EXIT_STATE="exit"
 
@@ -60,33 +64,109 @@ VBOX_PACKAGE_SET=(virtualbox-6.1 virtualbox-guest-x11 virtualbox-guest-utils vir
 GNOME_EXT_PACKAGE_SET=(gnome-tweak-tool gnome-shell-extensions chrome-gnome-shell)
 
 #### Option Input
-while [ -n "${1-}" ]; do
+while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
   case "$1" in
-  -s) SCRIPT_CURRENT_STATE="$2"
-    if [[ ${SCRIPT_STATE_OPTIONS[$SCRIPT_CURRENT_STATE]} ]]; then :
+  System)
+    SCRIPT_CURRENT_STATE="$1"
+    SCRIPT_DRIVER_STATE="${2:-"None"}"
+    shift
+
+    if [[ ${SCRIPT_SYSTEM_OPTIONS[$SCRIPT_DRIVER_STATE]} ]]; then
+      OUT_OPT=("${OUT_OPT[@]}" "$SCRIPT_DRIVER_STATE")
+      shift
     else
-      echo "${SCRIPT_CURRENT_STATE} is not a valid option"
-      SCRIPT_CURRENT_STATE="none"
+      printf "[ERROR] Incorrect Driver Argument: %s\n" "$SCRIPT_DRIVER_STATE"
+      printf "[INFO]Please enter ONE of the following:\nFresh\nDeskEnv\n\n"
+      printf "[INFO]Exiting nixTools...\n"
+      exit 1
     fi
+
+    while [ -n "${1-}" ]; do
+      case "$1" in
+      -v) # Virtual Flag
+        SYSTEM_IS_VIRTUAL="true"
+        shift
+        ;;
+      --DE-install)
+        # This enables the installation of a desktop environment
+        # Must Accept parameter (supported DE)
+        # Include test for $2 in supported DE and assign var || exit script
+        echo "Feature not available"
+        ;;
+      --de)
+        DESKTOP_ENV="$2"
+        # This Param option is for explicitly stating the desktop environment due to issues with using sudo with env-vars
+        if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
+        else
+          echo "${DESKTOP_ENV} is not a valid option"
+          SCRIPT_CURRENT_STATE="none"
+        fi
+        shift
+        shift
+        ;;
+      *)
+        echo "$1 Not a valid argument for System"
+        echo "Exiting Script"
+        exit 1
+        ;;
+      esac
+    done
     ;;
-  -v)
-    SYSTEM_IS_VIRTUAL="true"
-    ;;
-  --DE-install)
-    # This enables the installation of a desktop environment
-    echo "Feature not available"
-    ;;
-  -de) DESKTOP_ENV="$2"
-    # This Param option is for explicitly stating the desktop environment due to issues with using sudo with env-vars
-    if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
+  Patch)
+    SCRIPT_CURRENT_STATE="$1"
+    SCRIPT_DRIVER_STATE="${2:-"None"}"
+    shift
+
+    if [[ ${SCRIPT_PATCH_OPTIONS[$SCRIPT_DRIVER_STATE]} ]]; then
+      OUT_OPT=("${OUT_OPT[@]}" "$SCRIPT_DRIVER_STATE")
+      echo "$SCRIPT_DRIVER_STATE in SCRIPT_SYSTEM_OPTIONS"
+      shift
     else
-      echo "${DESKTOP_ENV} is not a valid option"
-      SCRIPT_CURRENT_STATE="none"
+      echo "Incorrect Driver Argument: $SCRIPT_DRIVER_STATE"
+      printf "Please enter ONE of the following:\nFresh\nDeskEnv\n\n"
+      echo "Exiting nixTools..."
+      exit 1
     fi
+
+    while [ -n "${1-}" ]; do
+      case "$1" in
+      -q) # check if system is compatible for this patch
+        OUT_OPT=("${OUT_OPT[@]}" "$1")
+        shift
+        ;;
+      -rb) # Rollback this patch if installed
+        OUT_OPT=("${OUT_OPT[@]}" "$1")
+        shift
+        ;;
+      --check) # Check if patch was applied
+        OUT_OPT=("${OUT_OPT[@]}" "$1")
+        shift
+        ;;
+      --manual) # Provide text file with instructions to apply this fix
+        OUT_OPT=("${OUT_OPT[@]}" "$1")
+        shift
+        ;;
+      *)
+        echo "$1 Not a valid argument for Patch"
+        echo "Exiting Script"
+        exit 1
+        ;;
+      esac
+    done
+    echo "${OUT_OPT[@]}"
+    printf "Patch is not supported in nixTool-master and has not implemented any patches."
     ;;
-  --) shift ; break ;;
+  Config) # Config nixTools option that creates .conf file with system state etc
+    SCRIPT_CURRENT_STATE="$1"
+    echo "${OUT_OPT[@]}"
+    printf "Config is not supported in nixTool-master and has not implemented any Configuration changes."
+    ;;
+  *)
+    echo "$1 Not a valid option"
+    echo "Exiting Script"
+    exit 1
+    ;;
   esac
-  shift
 done
 
 #### FUNCTIONS DECLARED
@@ -265,50 +345,72 @@ config_FreshSystem() {
 }
 
 script_Main() {
-  while [ "${SCRIPT_CURRENT_STATE}" != "${SCRIPT_DEFAULT_STATE}" ]; do
-    echo "Script State: ${SCRIPT_CURRENT_STATE}"
+  echo "Script State: ${SCRIPT_CURRENT_STATE}"
+  case $USER_IS_ROOT in
+  true)
     case $SCRIPT_CURRENT_STATE in
-    test)
-      SCRIPT_CURRENT_STATE="none"
-      ;;
-    dev)
-      script_PARAMETERS
-      SCRIPT_CURRENT_STATE="none"
-      ;;
-    sys_upgrade)
-      case $USER_IS_ROOT in
-      true)
-        system_Refresh
-        SCRIPT_CURRENT_STATE="none"
+    System)
+      case $SCRIPT_DRIVER_STATE in
+      Fresh)
+        config_FreshSystem
         ;;
-      false)
-        echo "Please use sudo when performing sys_upgrade"
-        SCRIPT_CURRENT_STATE="none"
+      Upgrade)
+        system_Refresh
+        ;;
+      DeskEnv)
+        echo "Not Supported"
         ;;
       esac
       ;;
-    git_config)
-      config_GitIdent
-      SCRIPT_CURRENT_STATE="none"
+    Patch)
+      echo "Not Supported"
       ;;
-    fresh_install)
-      case $USER_IS_ROOT in
-        true)
-          config_FreshSystem
-          SCRIPT_CURRENT_STATE="none"
-          ;;
-        false)
-          echo "Please use sudo when performing fresh_install"
-          SCRIPT_CURRENT_STATE="none"
-          ;;
-        esac
+    Config)
+      case $SCRIPT_DRIVER_STATE in
+      git_config)
+        echo "Do not run with sudo"
         ;;
-      *)
-        echo "Invalid Script State: ${SCRIPT_CURRENT_STATE}"
-        SCRIPT_CURRENT_STATE="none"
-        ;;
+      esac
+      ;;
+    test)
+      ;;
+    dev)
+      script_PARAMETERS
+      ;;
+    *)
+      echo "Unrecognized State, How did you get here?"
+      exit 1
     esac
-  done
+    ;;
+  false)
+    case $SCRIPT_CURRENT_STATE in
+    System)
+      echo "[INFO] Commands ' nixtool System <*argument*> ' require sudo"
+      ;;
+    Patch)
+      echo "Not Supported"
+      ;;
+    Config)
+      case $SCRIPT_DRIVER_STATE in
+      git_config)
+        config_GitIdent
+        ;;
+      esac
+      ;;
+    test)
+      echo "[INFO] No operations selected"
+      ;;
+    dev)
+      script_PARAMETERS
+      ;;
+    *)
+      echo "Unrecognized State, How did you get here?"
+      exit 1
+      ;;
+    esac
+    ;;
+  esac
 }
 
 script_Main
+exit 0
