@@ -3,10 +3,7 @@ set -e
 set -o pipefail
 
 #### OPTION PARAMETERS
-declare -A SCRIPT_STATE_OPTIONS
-declare -A IS_VIRTUAL_ENV_OPTIONS
-declare -A DESKTOP_ENV_OPTIONS
-SCRIPT_STATE_OPTIONS=(
+declare -A SCRIPT_STATE_OPTIONS=(
   ["none"]=1
   ["test"]=1
   ["dev"]=1
@@ -15,14 +12,23 @@ SCRIPT_STATE_OPTIONS=(
   ["git_config"]=1
   ["fresh_install"]=1
 )
-DESKTOP_ENV_OPTIONS=(
+declare -A DESKTOP_ENV_OPTIONS=(
   ["gnome"]=1
   ["xfce"]=1
 )
+declare -A SCRIPT_SYSTEM_OPTIONS=(
+  ["Fresh"]=1
+  ["Upgrade"]=1
+  ["DeskEnv"]=1
+)
+declare -A SCRIPT_PATCH_OPTIONS=(
+  ["intel-screen-tearing"]=1
+  ["pulseaudio-echo"]=1
+)
 
 
-#### SYSTEM/USER/SCRIPT STATE
-SYSTEM_DISTRIBUTION="${DESKTOP_SESSION}" || echo "Use 'sudo -E <command>'."
+#### SYSTEM/USER/SCRIPT STATE # Basis for .conf
+SYSTEM_DISTRIBUTION="${DESKTOP_SESSION}" || echo "Use 'sudo -E <command>'." # Can be deprecated after .conf file
 OS_RELEASE=$(lsb_release -cs)
 SYSTEM_DESKTOP=$(echo "$XDG_CURRENT_DESKTOP" | cut -d ":" -f 2-)
 SYSTEM_IS_VIRTUAL="false"
@@ -30,8 +36,7 @@ SYSTEM_IS_VIRTUAL="false"
 SCRIPT_USER=$(printf '%s\n' "${SUDO_USER:-$USER}")
 SCRIPT_CALLER="$USER"
 USER_HOME="/home/${SCRIPT_USER}"
-DEFAULT_SCRIPT_STATE="none"
-CURRENT_SCRIPT_STATE="none"
+SCRIPT_CURRENT_STATE="none"
 USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
 SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Change Sandbox prefix /opt/nixtools/ # Requires all downloads explicitly pointed to /opt/nixtools
 
@@ -39,6 +44,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
 SCRIPT_FILE="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 SCRIPT_BASE="$(basename "${SCRIPT_FILE}")"
+SCRIPT_PASSED_STATE="none"
+SCRIPT_DEFAULT_STATE="none"
+SCRIPT_EXIT_STATE="exit"
 
 
 #### INSTALLATION PACKAGES
@@ -54,11 +62,11 @@ GNOME_EXT_PACKAGE_SET=(gnome-tweak-tool gnome-shell-extensions chrome-gnome-shel
 #### Option Input
 while [ -n "${1-}" ]; do
   case "$1" in
-  -s) CURRENT_SCRIPT_STATE="$2"
-    if [[ ${SCRIPT_STATE_OPTIONS[$CURRENT_SCRIPT_STATE]} ]]; then :
+  -s) SCRIPT_CURRENT_STATE="$2"
+    if [[ ${SCRIPT_STATE_OPTIONS[$SCRIPT_CURRENT_STATE]} ]]; then :
     else
-      echo "${CURRENT_SCRIPT_STATE} is not a valid option"
-      CURRENT_SCRIPT_STATE="none"
+      echo "${SCRIPT_CURRENT_STATE} is not a valid option"
+      SCRIPT_CURRENT_STATE="none"
     fi
     ;;
   -v)
@@ -73,7 +81,7 @@ while [ -n "${1-}" ]; do
     if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
     else
       echo "${DESKTOP_ENV} is not a valid option"
-      CURRENT_SCRIPT_STATE="none"
+      SCRIPT_CURRENT_STATE="none"
     fi
     ;;
   --) shift ; break ;;
@@ -159,7 +167,7 @@ patch_PulseAudioEcho() {
 
 # Apply fix for screen tearing on systems with intel-gpu
 patch_IntelScreenTear() {
-  # Implement nessecity check before running
+  # Implement necessity check before running
   # This requires a check for dir&file in question
   # This requires a check textstring echoed into file
   mkdir -p /etc/X11/xorg.conf.d/
@@ -196,15 +204,17 @@ config_GitIdent() {
   done
 }
 
+# Prepare a Guest installation for VBox_Guest_Additions packages
 prep_VBox_GuestAdditions() {
   echo "[ERROR]: Contact system admin for help with this feature => prep_VBox_GuestAdditions"
 }
 
-
+# Install Packages to system
+# Requires sudo
 install_AptPackages() {
   local packages_arr=()
 
-  # Restrict VBox packages from being install in guest installs
+  # Restrict VBox packages from being installed in guest VBox
   if [ "${SYSTEM_IS_VIRTUAL}" = "false" ]; then
     prep_VBox && packages_arr=("${packages_arr[@]}" "${VBOX_PACKAGE_SET[@]}")
   else
@@ -255,47 +265,47 @@ config_FreshSystem() {
 }
 
 script_Main() {
-  while [ "${CURRENT_SCRIPT_STATE}" != "${DEFAULT_SCRIPT_STATE}" ]; do
-    echo "Script State: ${CURRENT_SCRIPT_STATE}"
-    case $CURRENT_SCRIPT_STATE in
+  while [ "${SCRIPT_CURRENT_STATE}" != "${SCRIPT_DEFAULT_STATE}" ]; do
+    echo "Script State: ${SCRIPT_CURRENT_STATE}"
+    case $SCRIPT_CURRENT_STATE in
     test)
-      CURRENT_SCRIPT_STATE="none"
+      SCRIPT_CURRENT_STATE="none"
       ;;
     dev)
       script_PARAMETERS
-      CURRENT_SCRIPT_STATE="none"
+      SCRIPT_CURRENT_STATE="none"
       ;;
     sys_upgrade)
       case $USER_IS_ROOT in
       true)
         system_Refresh
-        CURRENT_SCRIPT_STATE="none"
+        SCRIPT_CURRENT_STATE="none"
         ;;
       false)
         echo "Please use sudo when performing sys_upgrade"
-        CURRENT_SCRIPT_STATE="none"
+        SCRIPT_CURRENT_STATE="none"
         ;;
       esac
       ;;
     git_config)
       config_GitIdent
-      CURRENT_SCRIPT_STATE="none"
+      SCRIPT_CURRENT_STATE="none"
       ;;
     fresh_install)
       case $USER_IS_ROOT in
         true)
           config_FreshSystem
-          CURRENT_SCRIPT_STATE="none"
+          SCRIPT_CURRENT_STATE="none"
           ;;
         false)
           echo "Please use sudo when performing fresh_install"
-          CURRENT_SCRIPT_STATE="none"
+          SCRIPT_CURRENT_STATE="none"
           ;;
         esac
         ;;
       *)
-        echo "Invalid Script State: ${CURRENT_SCRIPT_STATE}"
-        CURRENT_SCRIPT_STATE="none"
+        echo "Invalid Script State: ${SCRIPT_CURRENT_STATE}"
+        SCRIPT_CURRENT_STATE="none"
         ;;
     esac
   done
