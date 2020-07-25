@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 
 #### OPTION PARAMETERS
-OUT_OPT=()
+# shellcheck disable=SC2034
 declare -A SCRIPT_STATE_OPTIONS=(
   ["none"]=1
   ["test"]=1
@@ -12,23 +12,47 @@ declare -A SCRIPT_STATE_OPTIONS=(
   ["Patch"]=1
   ["Config"]=1
 )
+
+# shellcheck disable=SC2034
 declare -A DESKTOP_ENV_OPTIONS=(
   ["gnome"]=1
   ["xfce"]=1
 )
+
+# shellcheck disable=SC2034
 declare -A SCRIPT_SYSTEM_OPTIONS=(
   ["Fresh"]=1
   ["Upgrade"]=1
   ["DeskEnv"]=1
 )
+
+# shellcheck disable=SC2034
 declare -A SCRIPT_PATCH_OPTIONS=(
   ["intel-screen-tearing"]=1
   ["pulseaudio-echo"]=1
 )
 
+# shellcheck disable=SC2034
 declare -A SCRIPT_CONFIG_OPTIONS=(
   ["git_config"]=1
 )
+
+error_incorrectDriver() {
+  echo "$1 Not a valid argument for ${SCRIPT_CURRENT_STATE}"
+  printf "Exiting Script...\n"
+  exit 1
+}
+
+
+check_ScriptDriver() {
+  local -n CHECK_ARRAY=$1
+  if [[ ${CHECK_ARRAY[$SCRIPT_DRIVER_STATE]} ]]; then
+    return 0
+  else
+    error_incorrectDriver CHECK_ARRAY
+  fi
+}
+
 
 #### SYSTEM/USER/SCRIPT STATE # Basis for .conf
 SYSTEM_DISTRIBUTION="${DESKTOP_SESSION}" || echo "Use 'sudo -E <command>'." # Can be deprecated after .conf file
@@ -43,14 +67,13 @@ SCRIPT_CURRENT_STATE="none"
 USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
 SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Change Sandbox prefix /opt/nixtools/ # Requires all downloads explicitly pointed to /opt/nixtools
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
 SCRIPT_FILE="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 SCRIPT_BASE="$(basename "${SCRIPT_FILE}")"
 SCRIPT_DRIVER_STATE="none"
 SCRIPT_DEFAULT_STATE="none"
 SCRIPT_EXIT_STATE="exit"
-
 
 #### INSTALLATION PACKAGES
 ### PACKAGE LIBRARIES
@@ -70,15 +93,7 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
     SCRIPT_DRIVER_STATE="${2:-"None"}"
     shift
 
-    if [[ ${SCRIPT_SYSTEM_OPTIONS[$SCRIPT_DRIVER_STATE]} ]]; then
-      OUT_OPT=("${OUT_OPT[@]}" "$SCRIPT_DRIVER_STATE")
-      shift
-    else
-      printf "[ERROR] Incorrect Driver Argument: %s\n" "$SCRIPT_DRIVER_STATE"
-      printf "[INFO]Please enter ONE of the following:\nFresh\nDeskEnv\n\n"
-      printf "[INFO]Exiting nixTools...\n"
-      exit 1
-    fi
+    check_ScriptDriver SCRIPT_SYSTEM_OPTIONS && shift
 
     while [ -n "${1-}" ]; do
       case "$1" in
@@ -94,70 +109,67 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
         ;;
       --de)
         DESKTOP_ENV="$2"
-        # This Param option is for explicitly stating the desktop environment due to issues with using sudo with env-vars
-        if [[ ${DESKTOP_ENV_OPTIONS[$DESKTOP_ENV]} ]]; then :
-        else
-          echo "${DESKTOP_ENV} is not a valid Desktop Environment."; printf "Exiting Script..."; exit 1
-        fi
-        shift; shift
+        # This Param option is for explicitly stating the desktop environment when necessary
+        check_ScriptDriver DESKTOP_ENV_OPTIONS && shift
+        shift
         ;;
       *)
-        echo "$1 Not a valid argument for System"; printf "Exiting Script..."; exit 1
+        error_incorrectDriver "${1}"
         ;;
       esac
     done
     ;;
   Patch)
+    printf "Patch is not supported in nixTool-master and has not implemented any patches."
     SCRIPT_CURRENT_STATE="$1"
     SCRIPT_DRIVER_STATE="${2:-"None"}"
     shift
-
-    if [[ ${SCRIPT_PATCH_OPTIONS[$SCRIPT_DRIVER_STATE]} ]]; then
-      OUT_OPT=("${OUT_OPT[@]}" "$SCRIPT_DRIVER_STATE")
-      echo "$SCRIPT_DRIVER_STATE in SCRIPT_SYSTEM_OPTIONS"
-      shift
-    else
-      echo "Incorrect Driver Argument: $SCRIPT_DRIVER_STATE"
-      printf "Please enter ONE of the following:\nFresh\nDeskEnv\n\n"
-      echo "Exiting nixTools..."
-      exit 1
-    fi
+    check_ScriptDriver SCRIPT_PATCH_OPTIONS && shift
 
     while [ -n "${1-}" ]; do
       case "$1" in
       -q) # check if system is compatible for this patch
-        OUT_OPT=("${OUT_OPT[@]}" "$1")
         shift
         ;;
       -rb) # Rollback this patch if installed
-        OUT_OPT=("${OUT_OPT[@]}" "$1")
         shift
         ;;
       --check) # Check if patch was applied
-        OUT_OPT=("${OUT_OPT[@]}" "$1")
         shift
         ;;
       --manual) # Provide text file with instructions to apply this fix
-        OUT_OPT=("${OUT_OPT[@]}" "$1")
         shift
         ;;
       *)
-        echo "$1 Not a valid argument for Patch"
-        echo "Exiting Script"
-        exit 1
+        error_incorrectDriver "${1}"
         ;;
       esac
     done
-    echo "${OUT_OPT[@]}"
-    printf "Patch is not supported in nixTool-master and has not implemented any patches."
+
     ;;
   Config) # Config nixTools option that creates .conf file with system state etc
     SCRIPT_CURRENT_STATE="$1"
-    echo "${OUT_OPT[@]}"
+    shift
+    check_ScriptDriver SCRIPT_CONFIG_OPTIONS && shift
+
+    while [ -n "${1-}" ]; do
+      case "$1" in
+      --clear) # Check if patch was applied
+        shift
+        ;;
+      --manual) # Provide text file with instructions to apply this fix
+        shift
+        ;;
+      *)
+        error_incorrectDriver "${1}"
+        ;;
+      esac
+    done
+
     ;;
   *)
     echo "$1 Not a valid option"
-    echo "Exiting Script"
+    echo "Exiting Script..."
     exit 1
     ;;
   esac
@@ -167,23 +179,38 @@ done
 
 # Print all User/Script parameters loaded at runtime
 script_PARAMETERS() {
-  printf "\nSYSTEM PARAMETERS:\n"
+  printf "# SYSTEM PARAMETERS:\n"
   echo "SYSTEM_DISTRIBUTION=$SYSTEM_DISTRIBUTION"
   echo "OS_RELEASE=$OS_RELEASE"
   echo "SYSTEM_DESKTOP=$SYSTEM_DESKTOP"
 
-  printf "\nUSER PARAMETERS:\n"
+  printf "\n# USER PARAMETERS:\n"
   echo "USER_IS_ROOT=$USER_IS_ROOT"
   echo "USER_HOME=$USER_HOME"
   echo "SYSTEM_IS_VIRTUAL=$SYSTEM_IS_VIRTUAL"
 
-  printf "\nSCRIPT PARAMETERS:\n"
+  printf "\n# SCRIPT PARAMETERS:\n"
   echo "SCRIPT_USER=$SCRIPT_USER"
   echo "SCRIPT_CALLER=$SCRIPT_CALLER"
   echo "SCRIPT_FILE=$SCRIPT_FILE"
   echo "SCRIPT_DIR=$SCRIPT_DIR"
   echo "SCRIPT_ROOT=$SCRIPT_ROOT"
   echo "SCRIPT_BASE=$SCRIPT_BASE"
+}
+
+config_nixTool_conf_contents() {
+  echo "SYSTEM_DISTRIBUTION=$SYSTEM_DISTRIBUTION
+OS_RELEASE=$OS_RELEASE
+SYSTEM_DESKTOP=$SYSTEM_DESKTOP
+SYSTEM_IS_VIRTUAL=$SYSTEM_IS_VIRTUAL"
+}
+
+config_nixTool_conf() {
+  local NIXTOOL_CONF="../etc/nixTool_sys.conf"
+  if [ -f "${NIXTOOL_CONF}" ]; then
+    mv "${NIXTOOL_CONF}" "${NIXTOOL_CONF}.bak"
+  fi
+  touch "${NIXTOOL_CONF}" && config_nixTool_conf_contents >>"${NIXTOOL_CONF}"
 }
 
 # Bring system up-to-date
@@ -196,7 +223,7 @@ system_Refresh() {
 # Prepare directories to be used by script
 # Check permissions on created directories
 prep_CreateScriptDirs() {
-  mkdir -p "${SANDBOX_DIR}" # Include test for dir
+  mkdir -p "${SANDBOX_DIR}"           # Include test for dir
   mkdir -p "${USER_HOME}/.local/bin/" # Include test for dir
   cp /etc/apt/sources.list /etc/apt/sources.list.bak
   cd "${SANDBOX_DIR}" || {
@@ -301,12 +328,12 @@ install_AptPackages() {
 
   # Add all other packages (Milestone -> Dialog Window)
   packages_arr=(
-  "${packages_arr[@]}"
-  "${INDIVIDUAL_PACKAGES[@]}"
-  "${EXFAT_PACKAGE_SET[@]}"
-  "${MULTIMEDIA_PACKAGE[@]}"
-  "${THEME_PACKAGES[@]}"
-  "${PYTHON_IDE_PACKAGE_SET[@]}"
+    "${packages_arr[@]}"
+    "${INDIVIDUAL_PACKAGES[@]}"
+    "${EXFAT_PACKAGE_SET[@]}"
+    "${MULTIMEDIA_PACKAGE[@]}"
+    "${THEME_PACKAGES[@]}"
+    "${PYTHON_IDE_PACKAGE_SET[@]}"
   )
 
   apt install "${packages_arr[@]}" -y
@@ -362,37 +389,42 @@ script_Main_Config() {
     case $SCRIPT_DRIVER_STATE in
     *)
       echo "The command you called cannot be run with sudo. Try --help"
+      exit 1
+      ;;
     esac
     ;;
   false)
     case $SCRIPT_DRIVER_STATE in
-      git_config)
+    git_config)
       config_GitIdent
       ;;
     esac
     ;;
   esac
+  exit 0
 }
 
 script_Main_System() {
   case $USER_IS_ROOT in
   true)
     case $SCRIPT_DRIVER_STATE in
-      Fresh)
-        config_FreshSystem
-        ;;
-      Upgrade)
-        system_Refresh
-        ;;
-      DeskEnv)
-        echo "Not Supported"
-        ;;
+    Fresh)
+      config_FreshSystem
+      ;;
+    Upgrade)
+      system_Refresh
+      ;;
+    DeskEnv)
+      echo "Not Supported"
+      ;;
     esac
     ;;
   false)
     echo "[INFO] Commands ' nixtool System <*argument*> ' require sudo"
+    exit 1
     ;;
   esac
+  exit 0
 }
 
 script_Main() {
@@ -411,7 +443,7 @@ script_Main() {
     printf "No test functions loaded."
     ;;
   dev)
-    script_PARAMETERS
+    config_nixTool_conf
     ;;
   *)
     echo "Unrecognized State, How did you get here?"
