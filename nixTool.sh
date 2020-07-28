@@ -66,6 +66,8 @@ USER_HOME="/home/${SCRIPT_USER}"
 SCRIPT_CURRENT_STATE="none"
 USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
 SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Change Sandbox prefix /opt/nixtools/ # Requires all downloads explicitly pointed to /opt/nixtools
+NIXTOOL_CONF="../etc/nixTool_sys.conf"
+
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
@@ -74,6 +76,11 @@ SCRIPT_BASE="$(basename "${SCRIPT_FILE}")"
 SCRIPT_DRIVER_STATE="none"
 SCRIPT_DEFAULT_STATE="none"
 SCRIPT_EXIT_STATE="exit"
+SCRIPT_TMP_DIR="${SCRIPT_DIR}/tmp"
+SCRIPT_ETC_DIR="${SCRIPT_DIR}/etc"
+SCRIPT_VAR_DIR="${SCRIPT_DIR}/var"
+SCRIPT_USR_DIR="${SCRIPT_DIR}/usr"
+SCRIPT_BAK_DIR="${SCRIPT_DIR}/bak"
 
 #### INSTALLATION PACKAGES
 ### PACKAGE LIBRARIES
@@ -167,6 +174,11 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
     done
 
     ;;
+  dev)
+    SCRIPT_CURRENT_STATE="$1"
+    shift
+
+    ;;
   *)
     echo "$1 Not a valid option"
     echo "Exiting Script..."
@@ -220,7 +232,7 @@ system_Refresh() {
   apt -qq autoremove -y
 }
 
-# Prepare directories to be used by script
+#Prepare directories to be used by script
 # Check permissions on created directories
 prep_CreateScriptDirs() {
   mkdir -p "${SANDBOX_DIR}"           # Include test for dir
@@ -257,26 +269,6 @@ install_JBToolbox() {
   rm -rf jetbrains-toolbox-*.tar.gz
   mv -v jetbrains-toolbox-*/* "${USER_HOME}"/.local/bin/
   rm -rf jetbrains-toolbox-*
-}
-
-# Apply Audio sink to fix Microphone-Speaker Echo
-patch_PulseAudioEcho() {
-  # Implement necessity check before running
-  echo 'load-module module-echo-cancel source_name=logitechsource' >>/etc/pulse/default.pa
-  echo 'set-default-source logitechsource' >>/etc/pulse/default.pa
-}
-
-# Apply fix for screen tearing on systems with intel-gpu
-patch_IntelScreenTear() {
-  # Implement necessity check before running
-  # This requires a check for dir&file in question
-  # This requires a check textstring echoed into file
-  mkdir -p /etc/X11/xorg.conf.d/
-  echo 'Section "Device"
-     Identifier  "Intel Graphics"
-     Driver      "intel"
-     Option      "TearFree"    "true"
-  EndSection' >>/etc/X11/xorg.conf.d/20-intel.conf
 }
 
 # Set Git VCS global username and email
@@ -365,6 +357,7 @@ config_FreshSystem() {
 }
 
 script_Main_Patch() {
+  . nix_Patch.sh
   case $USER_IS_ROOT in
   true)
     case $SCRIPT_DRIVER_STATE in
@@ -443,7 +436,7 @@ script_Main() {
     printf "No test functions loaded."
     ;;
   dev)
-    config_nixTool_conf
+    prep_NixTool_File_Struc
     ;;
   *)
     echo "Unrecognized State, How did you get here?"
