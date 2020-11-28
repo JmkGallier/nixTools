@@ -2,54 +2,68 @@
 set -e
 set -o pipefail
 
-#### OPTION PARAMETERS
+### OPTION PARAMETERS
+# Declare Script State options
 # shellcheck disable=SC2034
 declare -A SCRIPT_STATE_OPTIONS=(
   ["none"]=1
-  ["test"]=1
   ["dev"]=1
   ["System"]=1
   ["Patch"]=1
   ["Config"]=1
 )
 
+# Declare System options
+# shellcheck disable=SC2034
+declare -A SCRIPT_SYSTEM_OPTIONS=(
+  ["Fresh"]=1
+  ["Upgrade"]=1
+  ["DeskEnv"]=1
+  ["test"]=1
+)
+
+# Declare Path options
+# shellcheck disable=SC2034
+declare -A SCRIPT_PATCH_OPTIONS=(
+  ["intel-screen-tearing"]=1
+  ["pulseaudio-echo"]=1
+  ["test"]=1
+)
+
+# Declare Config options
+# shellcheck disable=SC2034
+declare -A SCRIPT_CONFIG_OPTIONS=(
+  ["git_config"]=1
+  ["nixconf"]=1
+  ["test"]=1
+)
+
+# Declare Desktop Environment options
 # shellcheck disable=SC2034
 declare -A DESKTOP_ENV_OPTIONS=(
   ["gnome"]=1
   ["xfce"]=1
 )
 
-# shellcheck disable=SC2034
-declare -A SCRIPT_SYSTEM_OPTIONS=(
-  ["Fresh"]=1
-  ["Upgrade"]=1
-  ["DeskEnv"]=1
-)
-
-# shellcheck disable=SC2034
-declare -A SCRIPT_PATCH_OPTIONS=(
-  ["intel-screen-tearing"]=1
-  ["pulseaudio-echo"]=1
-)
-
-# shellcheck disable=SC2034
-declare -A SCRIPT_CONFIG_OPTIONS=(
-  ["git_config"]=1
-)
-
-error_incorrectDriver() {
-  echo "$1 Not a valid argument for ${SCRIPT_CURRENT_STATE}"
-  printf "Exiting Script...\n"
+error_invalidOptions() {
+  echo "[ERROR] $1 Not a valid argument for ${SCRIPT_CURRENT_STATE}"
+  printf "[INFO] Exiting Script...\n"
   exit 1
 }
 
+# Script Exit for invalid options
+error_InvalidDriver() {
+  echo "[ERROR] Script State ' ${SCRIPT_CURRENT_STATE} ' does not have option ' ${SCRIPT_DRIVER_STATE} ' Try ./nixTools.sh --help"
+  printf "[INFO] Exiting Script...\n"
+  exit 1
+}
 
 check_ScriptDriver() {
   local -n CHECK_ARRAY=$1
   if [[ ${CHECK_ARRAY[$SCRIPT_DRIVER_STATE]} ]]; then
     return 0
   else
-    error_incorrectDriver CHECK_ARRAY
+    error_invalidOptions CHECK_ARRAY
   fi
 }
 
@@ -68,7 +82,6 @@ USER_IS_ROOT="$([ "$(id -u)" -eq 0 ] && echo "true" || echo "false")"
 SANDBOX_DIR="${USER_HOME}/Downloads/Sandbox/" # Change Sandbox prefix /opt/nixtools/ # Requires all downloads explicitly pointed to /opt/nixtools
 NIXTOOL_CONF="../etc/nixTool_sys.conf"
 
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 SCRIPT_ROOT="$(cd "$(dirname "${SCRIPT_DIR}")" && pwd)"
 SCRIPT_FILE="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
@@ -84,6 +97,7 @@ SCRIPT_BAK_DIR="${SCRIPT_DIR}/bak"
 
 #### INSTALLATION PACKAGES
 ### PACKAGE LIBRARIES
+## These are loaded in every use of this script, consider reading in from separate file
 INDIVIDUAL_PACKAGES=(wget snapd steam-installer neofetch nmap deluge htop)
 EXFAT_PACKAGE_SET=(exfat-fuse exfat-utils)
 MULTIMEDIA_PACKAGE=(libavcodec-extra)
@@ -121,13 +135,13 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
         shift
         ;;
       *)
-        error_incorrectDriver "${1}"
+        error_invalidOptions "${1}"
         ;;
       esac
     done
     ;;
   Patch)
-    printf "Patch is not supported in nixTool-master and has not implemented any patches."
+    printf "Patch is not supported in nixTool-main and has not implemented any patches."
     SCRIPT_CURRENT_STATE="$1"
     SCRIPT_DRIVER_STATE="${2:-"None"}"
     shift
@@ -148,14 +162,14 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
         shift
         ;;
       *)
-        error_incorrectDriver "${1}"
+        error_invalidOptions "${1}"
         ;;
       esac
     done
-
     ;;
   Config) # Config nixTools option that creates .conf file with system state etc
     SCRIPT_CURRENT_STATE="$1"
+    SCRIPT_DRIVER_STATE="${2:-"None"}"
     shift
     check_ScriptDriver SCRIPT_CONFIG_OPTIONS && shift
 
@@ -168,16 +182,14 @@ while [ "${SCRIPT_CURRENT_STATE}" == "none" ]; do
         shift
         ;;
       *)
-        error_incorrectDriver "${1}"
+        error_invalidOptions "${1}"
         ;;
       esac
     done
-
     ;;
   dev)
     SCRIPT_CURRENT_STATE="$1"
     shift
-
     ;;
   *)
     echo "$1 Not a valid option"
@@ -210,6 +222,7 @@ script_PARAMETERS() {
   echo "SCRIPT_BASE=$SCRIPT_BASE"
 }
 
+# Create contents to be stored in System configuration file
 config_nixTool_conf_contents() {
   echo "SYSTEM_DISTRIBUTION=$SYSTEM_DISTRIBUTION
 OS_RELEASE=$OS_RELEASE
@@ -217,6 +230,7 @@ SYSTEM_DESKTOP=$SYSTEM_DESKTOP
 SYSTEM_IS_VIRTUAL=$SYSTEM_IS_VIRTUAL"
 }
 
+# Create/re-create system configuration file
 config_nixTool_conf() {
   local NIXTOOL_CONF="../etc/nixTool_sys.conf"
   if [ -f "${NIXTOOL_CONF}" ]; then
@@ -261,6 +275,11 @@ prep_VBox() {
   add-apt-repository "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian ${OS_RELEASE} contrib"
 }
 
+# Prepare a Guest installation for VBox_Guest_Additions packages
+prep_VBox_GuestAdditions() {
+  echo "[ERROR]: Contact system admin for help with this feature => prep_VBox_GuestAdditions"
+}
+
 # Install JetBrains Toolbox App
 install_JBToolbox() {
   # Update links/Stop relying on links
@@ -293,13 +312,7 @@ config_GitIdent() {
       No) break ;;
       esac
     done
-
   done
-}
-
-# Prepare a Guest installation for VBox_Guest_Additions packages
-prep_VBox_GuestAdditions() {
-  echo "[ERROR]: Contact system admin for help with this feature => prep_VBox_GuestAdditions"
 }
 
 # Install Packages to system
@@ -338,7 +351,7 @@ config_FreshSystem() {
   prep_CreateScriptDirs
 
   # Requested Package Section (Prep-Req)
-  install_JBToolbox
+  #install_JBToolbox
 
   # Mass Package Installation
   apt -qq update
@@ -356,6 +369,89 @@ config_FreshSystem() {
   clear && neofetch
 }
 
+# Test script driver path
+test_Script_States() {
+  echo "Main => ${SCRIPT_CURRENT_STATE}"
+  echo "Driver => ${SCRIPT_DRIVER_STATE}"
+  echo "Options => "
+  echo "User => ${SCRIPT_USER}"
+}
+
+## Core Functions ##
+
+# System driver function
+script_Main_System() {
+  case $USER_IS_ROOT in
+  true)
+    case $SCRIPT_DRIVER_STATE in
+    Fresh)
+      config_FreshSystem
+      ;;
+    Upgrade)
+      system_Refresh
+      ;;
+    DeskEnv)
+      echo "Not Supported"
+      ;;
+    test)
+      test_Script_States
+      ;;
+    *)
+      error_InvalidDriver
+      ;;
+    esac
+    ;;
+  false)
+    case $SCRIPT_DRIVER_STATE in
+    test)
+      test_Script_States
+      ;;
+    *)
+      error_InvalidDriver
+      ;;
+    esac
+  esac
+  exit 0
+}
+
+# Config driver function
+script_Main_Config() {
+  case $USER_IS_ROOT in
+  true)
+    case $SCRIPT_DRIVER_STATE in
+    test)
+      test_Script_States
+      ;;
+    nixconf)
+      echo "[INFO] Do not use ' sudo ' while creating nixTool Conf file."
+      printf "[INFO] Exiting script...\n"
+      ;;
+    *)
+      error_InvalidDriver
+      ;;
+    esac
+    ;;
+  false)
+    case $SCRIPT_DRIVER_STATE in
+    git_config)
+      config_GitIdent
+      ;;
+    test)
+      test_Script_States
+      ;;
+    nixconf)
+      config_nixTool_conf
+      ;;
+    *)
+      error_InvalidDriver
+      ;;
+    esac
+    ;;
+  esac
+  exit 0
+}
+
+# Patch driver function
 script_Main_Patch() {
   . nix_Patch.sh
   case $USER_IS_ROOT in
@@ -376,50 +472,21 @@ script_Main_Patch() {
   esac
 }
 
-script_Main_Config() {
+script_NonProd_Dev() {
   case $USER_IS_ROOT in
   true)
-    case $SCRIPT_DRIVER_STATE in
-    *)
-      echo "The command you called cannot be run with sudo. Try --help"
-      exit 1
-      ;;
-    esac
-    ;;
-  false)
-    case $SCRIPT_DRIVER_STATE in
-    git_config)
-      config_GitIdent
-      ;;
-    esac
-    ;;
-  esac
-  exit 0
-}
-
-script_Main_System() {
-  case $USER_IS_ROOT in
-  true)
-    case $SCRIPT_DRIVER_STATE in
-    Fresh)
-      config_FreshSystem
-      ;;
-    Upgrade)
-      system_Refresh
-      ;;
-    DeskEnv)
-      echo "Not Supported"
-      ;;
-    esac
-    ;;
-  false)
-    echo "[INFO] Commands ' nixtool System <*argument*> ' require sudo"
+    echo "[INFO] Script Option ' dev ' cannot be run as root"
     exit 1
     ;;
+  false)
+    # Functions to test go here
+    script_PARAMETERS
+    ;;
   esac
   exit 0
 }
 
+# Main Script Driver
 script_Main() {
   echo "Script State: ${SCRIPT_CURRENT_STATE}"
   case $SCRIPT_CURRENT_STATE in
@@ -432,11 +499,8 @@ script_Main() {
   Patch)
     script_Main_Patch
     ;;
-  test)
-    printf "No test functions loaded."
-    ;;
   dev)
-    prep_NixTool_File_Struc
+    script_NonProd_Dev
     ;;
   *)
     echo "Unrecognized State, How did you get here?"
